@@ -1,5 +1,28 @@
+Capistrano::Configuration.instance(true).load do
+  _cset :pids_path, File.join(fetch(:shared_path), "pids")
+  _cset :sockets_path, File.join(fetch(:shared_path), "sockets")
+  namespace :base_helper do
+    desc "[internal] set the capistrano instance in Capistrano::BaseHelper module"
+    task :set_capistrano_instance do
+      Capistrano::BaseHelper::set_capistrano_instance(self)
+    end    
+  end
+  
+  on :start, "base_helper:set_capistrano_instance"
+end
+
 module Capistrano
   module BaseHelper
+    @@capistrano_instance
+    module_function
+
+    def set_capistrano_instance(cap_instance)
+      @@capistrano_instance = cap_instance
+    end
+
+    def get_capistrano_instance
+      @@capistrano_instance
+    end
 
     ## 
     # Automatically sets the environment based on presence of
@@ -10,27 +33,21 @@ module Capistrano
     # Defaults to "production" if not found
     #
     def environment
-      if exists?(:stage)
-        stage
-      elsif exists?(:rails_env)
-        rails_env
+      if @@capistrano_instance.exists?(:rails_env)
+        @@capistrano_instance.fetch(:rails_env)
+      elsif @@capistrano_instance.exists?(:rack_env)
+        @@capistrano_instance.fetch(:rack_env)        
+      elsif @@capistrano_instance.exists?(:stage)
+        @@capistrano_instance.fetch(:stage)
       elsif(ENV['RAILS_ENV'])
         ENV['RAILS_ENV']
       else
-        puts "--------------------------------------------------------------"
-        puts "- Rails environment or stage isn't set, defaulting to \"production\""
-        puts "--------------------------------------------------------------"
+        puts "------------------------------------------------------------------"
+        puts "- Stage, rack or rails environment isn't set in                  -"
+        puts "- :stage or :rails_env or :rack_env, defaulting to 'production'  -"
+        puts "------------------------------------------------------------------"
         "production"
       end
-    end
-
-    ##
-    # Return expanded path for templates
-    # a path called templates must exist when using Capistrano::BaseHelper
-    #
-    def templates_path
-      e = File.join(File.dirname(__FILE__),"../templates")
-      File.expand_path(e)
     end
 
     ##
@@ -57,7 +74,7 @@ module Capistrano
     # 
     # @local_file full path to local file
     # @remote_file full path to remote file
-    # @user_sudo use sudo or not...
+    # @use_sudo use sudo or not...
     # 
     def generate_and_upload_config(local_file, remote_file, use_sudo=false)
       temp_file  = '/tmp/' + File.basename(local_file)
@@ -65,11 +82,10 @@ module Capistrano
       # write temp file
       File.open(temp_file, 'w+') { |f| f << erb_buffer }
       # upload temp file
-      upload temp_file, temp_file, :via => :scp
-      # create any folders required
-      run "#{use_sudo ? sudo : ""} mkdir -p #{Pathname.new(remote_file).dirname}"
+      @@capistrano_instance.upload temp_file, temp_file, :via => :scp
+      # create any folders required,
       # move temporary file to remote file
-      run "#{use_sudo ? sudo : ""} mv #{temp_file} #{remote_file}"
+      @@capistrano_instance.run "#{use_sudo ? sudo : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? sudo : ""} mv #{temp_file} #{remote_file}"
       # remove temp file
       `rm #{temp_file}`
     end
@@ -79,8 +95,22 @@ module Capistrano
     # run_rake db:migrate
     #
     def run_rake(task)
-      run "cd #{current_path} && RAILS_ENV=#{environment} bundle exec rake #{task}"
+      @@capistrano_instance.run "cd #{@@capistrano_instance.current_path} && RAILS_ENV=#{Capistrano::BaseHelper::environment} bundle exec rake #{task}"
     end
 
+    ##
+    # Prepare a path with the given user and group name
+    # @path the path to prepare
+    # @user the user to chown the path
+    # @group the group to chown the path
+    # @use_sudo true/false for using sudo for all the commands
+
+    def prepare_path(path, user, group, use_sudo = false)
+      commands = []
+      commands << "#{use_sudo ? sudo : ""} mkdir -p #{path}"
+      commands << "#{use_sudo ? sudo : ""} chown #{user}:#{group} #{path} -R" 
+      commands << "#{use_sudo ? sudo : ""} chmod +rw #{path}"
+      @@capistrano_instance.run commands.join(" &&")
+    end
   end
 end
