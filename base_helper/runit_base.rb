@@ -1,17 +1,25 @@
 require 'base_helper'
 Capistrano::Configuration.instance(true).load do
   _cset :runit_dir, defer { "#{shared_path}/runit" }
+  _cset :runit_local_run,     File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "run.erb")
+  _cset :runit_local_finish,  File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "finish.erb")
+  _cset :runit_local_log_run, File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "log_run.erb")
+  _cset :runit_remote_run,     defer {File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "run")}
+  _cset :runit_remote_finish,  defer {File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "finish")}
+  _cset :runit_remote_log_run, defer {File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}
+  _cset :runit_log_user, "syslog"
+  _cset :runit_log_group, "syslog"
 
   after "deploy:update", "runit:enable"
   after "deploy:setup", "runit:setup"
 
   namespace :runit do
-    desc "Setup runit directories"
+    desc "Setup runit for the application"
     task :setup, :roles => [:app, :db, :web] do
       run "[ -d #{fetch(:runit_dir)}/.env ] || mkdir -p #{fetch(:runit_dir)}/.env"
       run "echo $HOME > #{fetch(:runit_dir)}/.env/HOME"
       # setup to run as user
-      Capistrano::RunitBase.app_services_create(fetch(:application), fetch(:user))
+      Capistrano::RunitBase.app_services_create
     end
 
     desc "Disable runit services for application"
@@ -63,84 +71,63 @@ module Capistrano
 
     # BEGIN - ALL services functions (functions that affects all services for the app)
 
-    def app_services_create_log_service(application, user, log_user = "syslog", log_group = "syslog")
+    def app_services_create_log_service
+      c = Capistrano::BaseHelper.get_capistrano_instance
       commands = []
-      commands << "sudo mkdir -p /etc/sv/#{user}/#{application}/log"
-      commands << "sudo chown #{user}:root /etc/sv/#{user}/#{application}/log"
-      commands << "sudo mkdir -p '/var/log/service/#{user}/#{application}/runit'"
-      commands << "sudo chown -R #{log_user}:#{log_group} '/var/log/service/#{user}/#{application}/runit'"
+      commands << "sudo mkdir -p #{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log")}"
+      commands << "sudo chown #{c.fetch(:user)}:root #{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log")}"
+      commands << "sudo mkdir -p '#{File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit")}'"
+      commands << "sudo chown -R #{c.fetch(:runit_log_user)}:#{c.fetch(:runit_log_group)} '#{File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit")}'"
 
-      Capistrano::BaseHelper.get_capistrano_instance.run(commands.join(" && "))
-      log_run_file = <<-EOF
-#!/bin/sh
-# Log output for #{application} running as #{user}
-# make sure the log directory exists
-mkdir -p "/var/log/service/#{user}/#{application}"
-# make sure the right owner is on the log directory
-chown -R #{log_user}:#{log_group} "/var/log/service/#{user}/#{application}/runit"
-# change path to the log directory
-cd "/var/log/service/#{user}/#{application}/runit"
-# start logging
-exec chpst -u "#{log_user}" svlogd -tt "/var/log/service/#{user}/#{application}/runit"
-EOF
-      Capistrano::BaseHelper.get_capistrano_instance.put(log_run_file,    "/etc/sv/#{user}/#{application}/log/run")
+      c.run(commands.join(" && "))
+      Capistrano::BaseHelper.generate_and_upload_config( Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_local_log_run), Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_remote_log_run), true )
       commands = []
-      commands << "sudo chmod u+x /etc/sv/#{user}/#{application}/log/run"
-      commands << "sudo chmod g+x /etc/sv/#{user}/#{application}/log/run"
-      commands << "sudo chown #{user}:root /etc/sv/#{user}/#{application}/log/run"
-      Capistrano::BaseHelper.get_capistrano_instance.run(commands.join(" && ")) 
+      commands << "sudo chmod u+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}'"
+      commands << "sudo chmod g+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}'"
+      commands << "sudo chown #{c.fetch(:user)}:root '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}'"
+      c.run(commands.join(" && ")) 
     end
 
     ##
     # application name should be "app-environment" or similar in case you deploy staging/production to same host
-    def app_services_create(application, user, log_user = "syslog", log_group = "syslog")
+    def app_services_create
       # SEE http://off-the-stack.moorman.nu/posts/5-user-services-with-runit/ for info on scripts
-      Capistrano::BaseHelper.get_capistrano_instance.run("sudo mkdir -p /etc/sv/#{user}/#{application}/")
-      run_file_data = <<-EOF
-#!/bin/sh -e
-# Run services for #{application} as #{user}
-exec 2>&1 
-# exec chpst -u #{user} runsvdir "#{Capistrano::BaseHelper.get_capistrano_instance.fetch(:runit_dir)}" 'log: ...........................................................................................................................................................................................................................................................................................................................................................................................................'
-exec chpst -u #{user} runsvdir "#{Capistrano::BaseHelper.get_capistrano_instance.fetch(:runit_dir)}"
-EOF
-      finish_file_data = <<-EOF
-#!/bin/sh
-# Finish/quit services for #{application} as #{user}
-sv -w600 force-stop #{Capistrano::BaseHelper.get_capistrano_instance.fetch(:runit_dir)}/*
-sv exit #{Capistrano::BaseHelper.get_capistrano_instance.fetch(:runit_dir)}/*
-EOF
+      c = Capistrano::BaseHelper.get_capistrano_instance
+      c.run("sudo mkdir -p '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path)}'")
+      
       commands = []
-      commands << "sudo chown #{user}:root /etc/sv/#{user}"
-      commands << "sudo chown #{user}:root /etc/sv/#{user}/#{application}"
-      Capistrano::BaseHelper.get_capistrano_instance.run(commands.join(" && "))
-      Capistrano::BaseHelper.get_capistrano_instance.put(run_file_data,    "/etc/sv/#{user}/#{application}/run")
-      Capistrano::BaseHelper.get_capistrano_instance.put(finish_file_data, "/etc/sv/#{user}/#{application}/finish")
-      commands = []
-      commands << "sudo chmod u+x /etc/sv/#{user}/#{application}/run"
-      commands << "sudo chmod u+x /etc/sv/#{user}/#{application}/finish"
-      commands << "sudo chmod g+x /etc/sv/#{user}/#{application}/run"
-      commands << "sudo chmod g+x /etc/sv/#{user}/#{application}/finish"
-      commands << "sudo chown #{user}:root /etc/sv/#{user}/#{application}/run"
-      commands << "sudo chown #{user}:root /etc/sv/#{user}/#{application}/finish"
-      Capistrano::BaseHelper.get_capistrano_instance.run(commands.join(" && "))
+      commands << "sudo chown #{c.fetch(:user)}:root /etc/sv/#{c.fetch(:user)}"
+      commands << "sudo chown #{c.fetch(:user)}:root /etc/sv/#{Capistrano::BaseHelper.user_app_env_path}"
+      c.run(commands.join(" && "))
+      Capistrano::BaseHelper.generate_and_upload_config( Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_local_run), Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_remote_run), true )
+      Capistrano::BaseHelper.generate_and_upload_config( Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_local_finish), Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_remote_finish), true )
 
-      Capistrano::RunitBase.app_services_create_log_service(application, user, log_user, log_group)
+      commands = []
+      commands << "sudo chmod u+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "run")}'"
+      commands << "sudo chmod u+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "finish")}'"
+      commands << "sudo chmod g+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "run")}'"
+      commands << "sudo chmod g+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "finish")}'"
+      commands << "sudo chown #{c.fetch(:user)}:root '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "run")}'"
+      commands << "sudo chown #{c.fetch(:user)}:root '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "finish")}'"
+      c.run(commands.join(" && "))
+
+      Capistrano::RunitBase.app_services_create_log_service
     end
 
     def app_services_enable(application, user)
-      Capistrano::BaseHelper.get_capistrano_instance.run("[ -h /etc/service/#{user}_#{application} ] || sudo ln -sf /etc/sv/#{user}/#{application} /etc/service/#{user}_#{application}")
+      Capistrano::BaseHelper.get_capistrano_instance.run("[ -h /etc/service/#{user}_#{application}_#{Capistrano::BaseHelper.environment} ] || sudo ln -sf /etc/sv/#{Capistrano::BaseHelper.user_app_env_path} /etc/service/#{user}_#{application}_#{Capistrano::BaseHelper.environment}")
     end
 
     def app_services_disable(application, user)
-      Capistrano::BaseHelper.get_capistrano_instance.run("[ ! -h /etc/service/#{user}_#{application} ] || sudo rm -f /etc/service/#{user}_#{application}")
+      Capistrano::BaseHelper.get_capistrano_instance.run("[ ! -h /etc/service/#{user}_#{application}_#{Capistrano::BaseHelper.environment} ] || sudo rm -f /etc/service/#{user}_#{application}_#{Capistrano::BaseHelper.environment}")
     end
 
     def app_services_purge(application, user)
       # this should stop ALL services running for the given application
       # true is appended to ignore any errors failing to stop the services
       commands = []
-      commands << "sudo rm -f /etc/service/#{user}_#{application}"
-      commands << "sudo rm -rf /etc/sv/#{user}/#{application}"
+      commands << "sudo rm -f /etc/service/#{user}_#{application}_#{Capistrano::BaseHelper.environment}"
+      commands << "sudo rm -rf /etc/sv/#{Capistrano::BaseHelper.user_app_env_path}"
       Capistrano::BaseHelper.get_capistrano_instance.run(commands.join(" && "))
     end
 

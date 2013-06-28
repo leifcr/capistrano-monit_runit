@@ -24,6 +24,10 @@ module Capistrano
       @@capistrano_instance
     end
 
+    def user_app_env_path
+      File.join(get_capistrano_instance.fetch(:user), "#{get_capistrano_instance.fetch(:application)}_#{environment}")
+    end
+
     ## 
     # Automatically sets the environment based on presence of
     # :stage (multistage)
@@ -85,7 +89,7 @@ module Capistrano
       @@capistrano_instance.upload temp_file, temp_file, :via => :scp
       # create any folders required,
       # move temporary file to remote file
-      @@capistrano_instance.run "#{use_sudo ? sudo : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? sudo : ""} mv #{temp_file} #{remote_file}"
+      @@capistrano_instance.run "#{use_sudo ? "sudo" : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? "sudo" : ""} mv #{temp_file} #{remote_file}"
       # remove temp file
       `rm #{temp_file}`
     end
@@ -107,10 +111,24 @@ module Capistrano
 
     def prepare_path(path, user, group, use_sudo = false)
       commands = []
-      commands << "#{use_sudo ? sudo : ""} mkdir -p #{path}"
-      commands << "#{use_sudo ? sudo : ""} chown #{user}:#{group} #{path} -R" 
-      commands << "#{use_sudo ? sudo : ""} chmod +rw #{path}"
+      commands << "#{use_sudo ? "sudo" : ""} mkdir -p #{path}"
+      commands << "#{use_sudo ? "sudo" : ""} chown #{user}:#{group} #{path} -R" 
+      commands << "#{use_sudo ? "sudo" : ""} chmod +rw #{path}"
       @@capistrano_instance.run commands.join(" &&")
     end
+
+    ##
+    # Check for file existance
+    # See http://stackoverflow.com/questions/1661586/how-can-you-check-to-see-if-a-file-exists-on-the-remote-server-in-capistrano
+    # Credits: Patrick Reagen / Knocte
+    def remote_file_exists?(path)
+      results = []
+      invoke_command("if [ -e '#{path}' ]; then echo -n 'true'; fi") do |ch, stream, out|
+        results << (out == 'true')
+      end
+
+      results == [true]
+    end
+    
   end
 end
