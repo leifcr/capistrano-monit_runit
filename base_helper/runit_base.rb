@@ -168,8 +168,8 @@ module Capistrano
       control_service(service_name, "restart")
     end
 
-    def control_service(service_name, service_control_function, ignore_error = false)
-      Capistrano::BaseHelper.get_capistrano_instance.run("[ ! -h #{service_path(service_name)}/run ] || sv #{service_control_function} #{service_path(service_name)}")  
+    def control_service(service_name, service_control_function, ignore_error = false, arguments = "")
+      Capistrano::BaseHelper.get_capistrano_instance.run("[ ! -h #{service_path(service_name)}/run ] || sv #{arguments} #{service_control_function} #{service_path(service_name)}")  
     end
 
     # Will not check if the service exists before trying to force it down
