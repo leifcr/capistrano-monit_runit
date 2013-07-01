@@ -1,0 +1,2 @@
+<% c = Capistrano::BaseHelper::get_capistrano_instance %>
+include <%= c.fetch(:monit_enabled_path) %>/*.conf

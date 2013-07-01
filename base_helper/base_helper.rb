@@ -24,6 +24,10 @@ module Capistrano
       @@capistrano_instance
     end
 
+    def user_app_env_underscore
+      "#{get_capistrano_instance.fetch(:user)}_#{get_capistrano_instance.fetch(:application)}_#{environment}"
+    end
+
     def user_app_env_path
       File.join(get_capistrano_instance.fetch(:user), "#{get_capistrano_instance.fetch(:application)}_#{environment}")
     end
@@ -99,7 +103,7 @@ module Capistrano
     # run_rake db:migrate
     #
     def run_rake(task)
-      @@capistrano_instance.run "cd #{@@capistrano_instance.current_path} && RAILS_ENV=#{Capistrano::BaseHelper::environment} bundle exec rake #{task}"
+      @@capistrano_instance.run "cd #{@@capistrano_instance.current_path} && RAILS_ENV=#{Capistrano::BaseHelper.environment} bundle exec rake #{task}"
     end
 
     ##
@@ -123,7 +127,7 @@ module Capistrano
     # Credits: Patrick Reagen / Knocte
     def remote_file_exists?(path)
       results = []
-      invoke_command("if [ -e '#{path}' ]; then echo -n 'true'; fi") do |ch, stream, out|
+      @@capistrano_instance.invoke_command("if [ -e '#{path}' ]; then echo -n 'true'; fi") do |ch, stream, out|
         results << (out == 'true')
       end
 
