@@ -69,6 +69,10 @@ module Capistrano
       Capistrano::BaseHelper.get_capistrano_instance.run("[ -d #{service_path(service_name)} ] || mkdir -p #{service_path(service_name)}")
     end
 
+    def service_pid(service_name)
+      File.join(service_path(service_name), "supervise", "pid")
+    end
+
     # BEGIN - ALL services functions (functions that affects all services for the app)
 
     def app_services_create_log_service
@@ -213,12 +217,18 @@ module Capistrano
 
     def make_service_scripts_executeable(service_name)
       commands = []
-      commands << "chmod u+x #{Capistrano::RunitBase.remote_run_config_path(service_name)}"
-      commands << "chmod g+x #{Capistrano::RunitBase.remote_run_config_path(service_name)}"
-      commands << "chmod u+x #{Capistrano::RunitBase.remote_service_log_run_path(service_name)}"
-      commands << "chmod g+x #{Capistrano::RunitBase.remote_service_log_run_path(service_name)}"
-      commands << "chmod u+x -R #{Capistrano::RunitBase.remote_control_path_root(service_name)}"
-      commands << "chmod g+x -R #{Capistrano::RunitBase.remote_control_path_root(service_name)}"
+      if Capistrano::BaseHelper::remote_file_exists?(Capistrano::RunitBase.remote_run_config_path(service_name))
+        commands << "chmod u+x #{Capistrano::RunitBase.remote_run_config_path(service_name)}"
+        commands << "chmod g+x #{Capistrano::RunitBase.remote_run_config_path(service_name)}"
+      end
+      if Capistrano::BaseHelper::remote_file_exists?(Capistrano::RunitBase.remote_service_log_run_path(service_name))
+        commands << "chmod u+x #{Capistrano::RunitBase.remote_service_log_run_path(service_name)}"
+        commands << "chmod g+x #{Capistrano::RunitBase.remote_service_log_run_path(service_name)}"
+      end
+      if Capistrano::BaseHelper::remote_file_exists?(Capistrano::RunitBase.remote_control_path_root(service_name))
+        commands << "chmod u+x -R #{Capistrano::RunitBase.remote_control_path_root(service_name)}"
+        commands << "chmod g+x -R #{Capistrano::RunitBase.remote_control_path_root(service_name)}"
+      end
       Capistrano::BaseHelper.get_capistrano_instance.run commands.join(" ; ")
     end
 
