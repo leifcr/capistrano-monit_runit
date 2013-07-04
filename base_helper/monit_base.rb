@@ -25,13 +25,21 @@ Capistrano::Configuration.instance(true).load do
   _cset :monit_daemon_time, "60"
   _cset :monit_start_delay, "60"
 
-  before "deploy", "monit:unmonitor"
   #after "deploy:update", "monit:enable"
   after "deploy:setup", "monit:setup"
+  before "monit:setup",  "monit:main_config"
+
+  after "monit:setup", "monit:enable"
   after "monit:enable", "monit:reload"
-  after "monit:enable", "monit:start"
+
+  # must trigger monitor AFTER deploy
+  after "deploy", "monit:monitor"
+  # must trigger unmonitor BEFORE deploy
+  before "deploy", "monit:unmonitor"
+
   before "monit:disable", "monit:unmonitor"
   after "monit:disable", "monit:reload"
+  
   before "monit:purge", "monit:unmonitor"
 
   namespace :monit do
@@ -50,24 +58,28 @@ Capistrano::Configuration.instance(true).load do
       remote_config = File.join(fetch(:monit_dir), "monit.conf")
 
       Capistrano::BaseHelper::generate_and_upload_config(local_config, remote_config)
-
-      unless Capistrano::BaseHelper.remote_file_exists?("/etc/monit/monitrc")
-        monit.main_config
-      end
     end
 
     desc "Setup main monit config file (/etc/monit/monitrc)"
     task :main_config, :roles => [:app, :db, :web] do
-       # create monitrc file
-      local_config  = File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates", "monit")), "monitrc.erb")
-      remote_config = File.join("/etc","monit","monitrc")
+      if Capistrano::CLI.ui.agree("Setup /etc/monit/monitrc ?")
+         # create monitrc file
+        local_config  = File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates", "monit")), "monitrc.erb")
+        remote_config = File.join("/etc","monit","monitrc")
 
-      Capistrano::BaseHelper::generate_and_upload_config(local_config, remote_config, true)
+        Capistrano::BaseHelper::generate_and_upload_config(local_config, remote_config, true)
 
-      commands = []
-      commands << "sudo chmod 700 /etc/monit/monitrc"
-      commands << "sudo chown root:root /etc/monit/monitrc"
-      run commands.join(" && ")
+        commands = []
+        commands << "sudo chmod 700 /etc/monit/monitrc"
+        commands << "sudo chown root:root /etc/monit/monitrc"
+        run commands.join(" && ")
+        # restart monit, as main config is now updated
+        run "sudo service monit restart"
+        puts "----------------------------------------"
+        puts "Sleeping for #{(fetch(:monit_daemon_time).to_i + fetch(:monit_start_delay).to_i + 2)} seconds to wait for monit to be ready"
+        puts "----------------------------------------"
+        sleep (fetch(:monit_daemon_time).to_i + fetch(:monit_start_delay).to_i + 2)
+      end
     end
 
     desc "Enable monit services for application"
