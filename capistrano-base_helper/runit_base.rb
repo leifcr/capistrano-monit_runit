@@ -1,4 +1,3 @@
-require 'base_helper'
 Capistrano::Configuration.instance(true).load do
   _cset :runit_dir, defer { "#{shared_path}/runit" }
   _cset :runit_local_run,     File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "run.erb")

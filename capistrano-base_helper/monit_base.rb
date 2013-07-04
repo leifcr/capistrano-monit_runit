@@ -4,7 +4,6 @@
 # shared_path/monit/application.conf <-- in this: include shared_path/monit/enabled
 # files can then belong to user instead of root, and sudo is avoided for some apps
 
-require 'base_helper'
 Capistrano::Configuration.instance(true).load do
   _cset :monit_dir,            defer { File.join(shared_path, "monit") }
   _cset :monit_available_path, defer { File.join(monit_dir, "available") }
