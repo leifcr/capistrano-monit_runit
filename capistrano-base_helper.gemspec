@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "capistrano-base_helper"
-  s.version = "0.0.3"
+  s.version = "0.0.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Leif Ringstad"]
@@ -24,10 +24,10 @@ Gem::Specification.new do |s|
     "Rakefile",
     "VERSION",
     "capistrano-base_helper.gemspec",
-    "capistrano-base_helper.rb",
-    "capistrano-base_helper/base_helper.rb",
-    "capistrano-base_helper/monit_base.rb",
-    "capistrano-base_helper/runit_base.rb",
+    "lib/capistrano/base_helper.rb",
+    "lib/capistrano/base_helper/base_helper.rb",
+    "lib/capistrano/base_helper/monit_base.rb",
+    "lib/capistrano/base_helper/runit_base.rb",
     "templates/monit/app_include.conf.erb",
     "templates/monit/monitrc.erb",
     "templates/runit/finish.erb",
