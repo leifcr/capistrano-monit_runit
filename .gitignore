@@ -19,7 +19,3 @@ Icon
 pkg/*
 *.gem
 
-# ruby-version and rvmrc
-.ruby-version
-.ruby-gemset
-.rvmrc
