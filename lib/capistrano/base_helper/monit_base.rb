@@ -24,6 +24,12 @@ Capistrano::Configuration.instance(true).load do
   _cset :monit_daemon_time, "60"
   _cset :monit_start_delay, "60"
 
+  _cset :monit_local_monitrc,     File.join(File.expand_path(File.join(File.dirname(__FILE__),"../../../templates", "monit")), "monitrc.erb")
+  _cset :monit_local_application_conf, File.join(File.expand_path(File.join(File.dirname(__FILE__),"../../../templates", "monit")), "app_include.conf.erb")
+
+  _cset :monit_remote_monitrc, File.join("/etc","monit","monitrc")
+  _cset :monit_remote_application_conf, File.join(fetch(:monit_dir), "monit.conf")
+
   #after "deploy:update", "monit:enable"
   after "deploy:setup", "monit:setup"
   before "monit:setup",  "monit:main_config"
@@ -53,20 +59,15 @@ Capistrano::Configuration.instance(true).load do
       run "[ -d #{fetch(:monit_enabled_path)} ] || mkdir -p #{fetch(:monit_enabled_path)}"
 
       # create include configuration (used when booting the system)
-      local_config  = File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates", "monit")), "app_include.conf.erb")
-      remote_config = File.join(fetch(:monit_dir), "monit.conf")
 
-      Capistrano::BaseHelper::generate_and_upload_config(local_config, remote_config)
+      Capistrano::BaseHelper::generate_and_upload_config(fetch(:monit_local_application_conf), fetch(:monit_remote_application_conf))
     end
 
     desc "Setup main monit config file (/etc/monit/monitrc)"
     task :main_config, :roles => [:app, :db, :web] do
       if Capistrano::CLI.ui.agree("Setup /etc/monit/monitrc ?")
          # create monitrc file
-        local_config  = File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates", "monit")), "monitrc.erb")
-        remote_config = File.join("/etc","monit","monitrc")
-
-        Capistrano::BaseHelper::generate_and_upload_config(local_config, remote_config, true)
+        Capistrano::BaseHelper::generate_and_upload_config(fetch(:monit_local_monitrc), fetch(:monit_remote_monitrc), true)
 
         commands = []
         commands << "sudo chmod 700 /etc/monit/monitrc"

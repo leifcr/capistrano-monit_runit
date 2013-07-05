@@ -1,8 +1,8 @@
 Capistrano::Configuration.instance(true).load do
   _cset :runit_dir, defer { "#{shared_path}/runit" }
-  _cset :runit_local_run,     File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "run.erb")
-  _cset :runit_local_finish,  File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "finish.erb")
-  _cset :runit_local_log_run, File.join(File.expand_path(File.join(File.dirname(__FILE__),"../templates")), "runit",  "log_run.erb")
+  _cset :runit_local_run,     File.join(File.expand_path(File.join(File.dirname(__FILE__),"../../../templates")), "runit",  "run.erb")
+  _cset :runit_local_finish,  File.join(File.expand_path(File.join(File.dirname(__FILE__),"../../../templates")), "runit",  "finish.erb")
+  _cset :runit_local_log_run, File.join(File.expand_path(File.join(File.dirname(__FILE__),"../../../templates")), "runit",  "log_run.erb")
   _cset :runit_remote_run,     defer {File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "run")}
   _cset :runit_remote_finish,  defer {File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "finish")}
   _cset :runit_remote_log_run, defer {File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}
@@ -83,7 +83,7 @@ module Capistrano
       commands << "sudo chown -R #{c.fetch(:runit_log_user)}:#{c.fetch(:runit_log_group)} '#{File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit")}'"
 
       c.run(commands.join(" && "))
-      Capistrano::BaseHelper.generate_and_upload_config( Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_local_log_run), Capistrano::BaseHelper::get_capistrano_instance.fetch(:runit_remote_log_run), true )
+      Capistrano::BaseHelper.generate_and_upload_config( c.fetch(:runit_local_log_run), c.fetch(:runit_remote_log_run), true )
       commands = []
       commands << "sudo chmod u+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}'"
       commands << "sudo chmod g+x '#{File.join("/etc", "sv", Capistrano::BaseHelper.user_app_env_path, "log", "run")}'"
