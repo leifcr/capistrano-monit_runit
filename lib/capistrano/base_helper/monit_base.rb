@@ -1,8 +1,13 @@
-# TODO: PLACE monit files like this
-# shared_path/monit/available
-# shared_path/monit/enabled
-# shared_path/monit/application.conf <-- in this: include shared_path/monit/enabled
-# files can then belong to user instead of root, and sudo is avoided for some apps
+# Monit Base config
+# Shared config for all apps that use monit
+#
+# Monit service config locations:
+# Available services: shared_path/monit/available
+# Enabled services: shared_path/monit/enabled
+# Application "global" config: shared_path/monit/application.conf <-- in this: include shared_path/monit/enabled
+# 
+# For control of monit, sudo is required, as it always runs as root. (Unfortunately.)
+#
 
 Capistrano::Configuration.instance(true).load do
   _cset :monit_dir,            defer { File.join(shared_path, "monit") }
@@ -70,15 +75,15 @@ Capistrano::Configuration.instance(true).load do
         Capistrano::BaseHelper::generate_and_upload_config(fetch(:monit_local_monitrc), fetch(:monit_remote_monitrc), true)
 
         commands = []
-        commands << "sudo chmod 700 /etc/monit/monitrc"
-        commands << "sudo chown root:root /etc/monit/monitrc"
+        commands << "#{sudo} chmod 700 /etc/monit/monitrc"
+        commands << "#{sudo} chown root:root /etc/monit/monitrc"
         run commands.join(" && ")
         # restart monit, as main config is now updated
-        run "sudo service monit restart"
+        run "#{sudo} service monit restart"
         puts "----------------------------------------"
-        puts "Sleeping for #{(fetch(:monit_daemon_time).to_i + fetch(:monit_start_delay).to_i + 2)} seconds to wait for monit to be ready"
+        puts "Sleeping for #{(fetch(:monit_daemon_time).to_i + fetch(:monit_start_delay).to_i + 10)} seconds to wait for monit to be ready"
         puts "----------------------------------------"
-        sleep (fetch(:monit_daemon_time).to_i + fetch(:monit_start_delay).to_i + 2)
+        sleep (fetch(:monit_start_delay).to_i + 2)
       end
     end
 
@@ -87,20 +92,20 @@ Capistrano::Configuration.instance(true).load do
       real_conf   = File.join(fetch(:monit_dir), "monit.conf")
       symlink   = File.join(fetch(:monit_etc_conf_d_path), "#{Capistrano::BaseHelper.user_app_env_underscore}.conf")
       # symlink to include file
-      run("[ -h #{symlink} ] || sudo ln -sf #{real_conf} #{symlink}")
+      run("[ -h #{symlink} ] || #{sudo} ln -sf #{real_conf} #{symlink}")
     end
  
     desc "Disable monit services for application"
     task :disable, :roles => [:app, :db, :web] do
       symlink   = File.join(fetch(:monit_etc_conf_d_path), "#{Capistrano::BaseHelper.user_app_env_underscore}.conf")
-      run("[ ! -h #{symlink} ] || sudo rm -f #{symlink}")
+      run("[ ! -h #{symlink} ] || #{sudo} rm -f #{symlink}")
     end
 
     desc "Purge/remove all monit configurations for the application"
     task :purge, :roles => [:app, :db, :web] do
         symlink   = File.join(fetch(:monit_etc_conf_d_path), "#{Capistrano::BaseHelper.user_app_env_underscore}.conf")
-      run("[ ! -h #{symlink} ]   || sudo rm -f #{symlink}")
-      run("[ ! -d #{fetch(:monit_dir)} ] || sudo rm -f #{fetch(:monit_dir)}")
+      run("[ ! -h #{symlink} ]   || #{sudo} rm -f #{symlink}")
+      run("[ ! -d #{fetch(:monit_dir)} ] || #{sudo} rm -f #{fetch(:monit_dir)}")
     end
 
     desc "Monitor the application"
@@ -167,7 +172,8 @@ module Capistrano
       ##
       # Control / Command monit with given arguments
       def command_monit(command, arguments="")
-        Capistrano::BaseHelper.get_capistrano_instance.run("sudo monit #{arguments} #{command}")
+        c = Capistrano::BaseHelper.get_capistrano_instance
+        c.run("#{c.sudo} monit #{arguments} #{command}")
       end
 
     end
@@ -184,7 +190,7 @@ module Capistrano
       def command_monit(command, service_name="", arguments="")
         c = Capistrano::BaseHelper.get_capistrano_instance
         service_name = "#{c.fetch(:user)}_#{c.fetch(:application)}_#{c.fetch(:environment)}_#{c.fetch(:service)}" if service_name == ""
-        c.run("sudo monit #{arguments} #{command} #{service_name}")
+        c.run("#{c.sudo} monit #{arguments} #{command} #{service_name}")
       end
 
       ##

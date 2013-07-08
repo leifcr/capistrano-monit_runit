@@ -2,5 +2,12 @@
 # <% c = Capistrano::BaseHelper::get_capistrano_instance %>
 # Finish/quit services for <%= c.fetch(:application) %> as <%= c.fetch(:user) %> in env <%= Capistrano::BaseHelper.environment %>
 #
+# Announce termination
+#
+echo "Stopping all services for <%= c.fetch(:application) %> running as <%= c.fetch(:user) %>"
+
+# Force all services to stop
 sv -w600 force-stop '<%= c.fetch(:runit_dir) %>/*'
+
+# "Exit" all services
 sv exit '<%= c.fetch(:runit_dir) %>/*'

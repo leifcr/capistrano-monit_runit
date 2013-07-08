@@ -25,7 +25,11 @@ module Capistrano
     end
 
     def user_app_env_underscore
-      "#{get_capistrano_instance.fetch(:user)}_#{get_capistrano_instance.fetch(:application)}_#{environment}"
+      "#{@@capistrano_instance.fetch(:user)}_#{@@capistrano_instance.fetch(:application)}_#{environment}"
+    end
+
+    def user_app_env_underscore_short
+      "#{@@capistrano_instance.fetch(:user)[0...1]}_#{environment[0...1]}_#{@@capistrano_instance.fetch(:application)}"
     end
 
     def user_app_env_path
@@ -93,7 +97,7 @@ module Capistrano
       @@capistrano_instance.upload temp_file, temp_file, :via => :scp
       # create any folders required,
       # move temporary file to remote file
-      @@capistrano_instance.run "#{use_sudo ? "sudo" : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? "sudo" : ""} mv #{temp_file} #{remote_file}"
+      @@capistrano_instance.run "#{use_sudo ? @@capistrano_instance.sudo : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? "sudo" : ""} mv #{temp_file} #{remote_file}"
       # remove temp file
       `rm #{temp_file}`
     end
@@ -115,9 +119,9 @@ module Capistrano
 
     def prepare_path(path, user, group, use_sudo = false)
       commands = []
-      commands << "#{use_sudo ? "sudo" : ""} mkdir -p #{path}"
-      commands << "#{use_sudo ? "sudo" : ""} chown #{user}:#{group} #{path} -R" 
-      commands << "#{use_sudo ? "sudo" : ""} chmod +rw #{path}"
+      commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} mkdir -p #{path}"
+      commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} chown #{user}:#{group} #{path} -R" 
+      commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} chmod +rw #{path}"
       @@capistrano_instance.run commands.join(" &&")
     end
 
