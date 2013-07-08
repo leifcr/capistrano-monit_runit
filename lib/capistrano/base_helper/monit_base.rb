@@ -81,7 +81,7 @@ Capistrano::Configuration.instance(true).load do
         # restart monit, as main config is now updated
         run "#{sudo} service monit restart"
         puts "----------------------------------------"
-        puts "Sleeping for #{(fetch(:monit_daemon_time).to_i + fetch(:monit_start_delay).to_i + 10)} seconds to wait for monit to be ready"
+        puts "Sleeping for #{fetch(:monit_start_delay).to_i + 10)} seconds to wait for monit to be ready"
         puts "----------------------------------------"
         sleep (fetch(:monit_start_delay).to_i + 2)
       end
