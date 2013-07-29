@@ -42,10 +42,11 @@ Capistrano::Configuration.instance(true).load do
   after "monit:setup", "monit:enable"
   after "monit:enable", "monit:reload"
 
+  # This should be done in the app, as the sequence of restarting services can be specific
   # must trigger monitor after deploy
-  after "deploy", "monit:monitor"
+  # after "deploy", "monit:monitor"
   # must trigger unmonitor before deploy
-  before "deploy", "monit:unmonitor"
+  # before "deploy", "monit:unmonitor"
 
   before "monit:disable", "monit:unmonitor"
   after "monit:disable", "monit:reload"
@@ -81,7 +82,7 @@ Capistrano::Configuration.instance(true).load do
         # restart monit, as main config is now updated
         run "#{sudo} service monit restart"
         puts "----------------------------------------"
-        puts "Sleeping for #{fetch(:monit_start_delay).to_i + 10)} seconds to wait for monit to be ready"
+        puts "Sleeping for #{fetch(:monit_start_delay).to_i + 10} seconds to wait for monit to be ready"
         puts "----------------------------------------"
         sleep (fetch(:monit_start_delay).to_i + 2)
       end
