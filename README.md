@@ -43,8 +43,6 @@ You can add this to deploy.rb or env.rb in order to automatically monitor/unmoni
 
 It is important to unmonitor tasks while deploying as they can trigger stops/restarts to the app that monit thinks are "crashes"
 
-_Note: This is already done in monit\_base.rb, so no additional setup in deploy.rb or env.rb required_
-
 ```ruby
 before "deploy", "monit:unmonitor"
 after  "deploy", "monit:monitor"
