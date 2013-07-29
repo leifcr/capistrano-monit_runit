@@ -23,7 +23,7 @@ _Note: The tasks will not work unless you have installed any monit services_
 
 All these tasks do monit tasks for all services setup with monit.
 
-```ruby
+```
 cap monit:disable               # Disable monit services for application
 cap monit:enable                # Enable monit services for application
 cap monit:main_config           # Setup main monit config file (/etc/monit/monitrc)
@@ -37,11 +37,31 @@ cap monit:status                # Status monit (global)
 cap monit:stop                  # Stop monitoring the application permanent (Monit saves state)
 ```
 
+#### Setup in your deploy file
+
+You can add this to deploy.rb or env.rb in order to automatically monitor/unmonitor tasks
+
+It is important to unmonitor tasks while deploying as they can trigger stops/restarts to the app that monit thinks are "crashes"
+
+_Note: This is already done in monit\_base.rb, so no additional setup in deploy.rb or env.rb required_
+
+```ruby
+before "deploy", "monit:unmonitor"
+after  "deploy", "monit:monitor"
+```
+
+If you want monit to automatically start/stop runit instead of triggering seperately
+
+```ruby
+before "monit:unmonitor", "monit:stop"
+after  "monit:monitor", "monit:start"
+```
+
 ### Runit
 
 All these tasks do runit tasks for all services setup with runit.
 
-```ruby
+```
 cap runit:disable               # Disable runit services for application
 cap runit:enable                # Enable runit services for application
 cap runit:once                  # Only start services once.
@@ -50,6 +70,17 @@ cap runit:setup                 # Setup runit for the application
 cap runit:start                 # Start all runit services for current application
 cap runit:stop                  # Stop all runit services for current application
 ```
+
+#### Setup in your deploy file
+
+You can add this to deploy.rb or env.rb in order to automatically start/stop tasks
+
+```ruby
+before "deploy", "runit:stop"
+after  "deploy", "runit:start"
+```
+
+See each gem if you want to start/stop each service separate instead of together.
 
 ## Assumptions
 
