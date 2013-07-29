@@ -42,9 +42,9 @@ Capistrano::Configuration.instance(true).load do
   after "monit:setup", "monit:enable"
   after "monit:enable", "monit:reload"
 
-  # must trigger monitor AFTER deploy
+  # must trigger monitor after deploy
   after "deploy", "monit:monitor"
-  # must trigger unmonitor BEFORE deploy
+  # must trigger unmonitor before deploy
   before "deploy", "monit:unmonitor"
 
   before "monit:disable", "monit:unmonitor"
