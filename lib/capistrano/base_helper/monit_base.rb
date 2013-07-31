@@ -104,7 +104,7 @@ Capistrano::Configuration.instance(true).load do
 
     desc "Purge/remove all monit configurations for the application"
     task :purge, :roles => [:app, :db, :web] do
-        symlink   = File.join(fetch(:monit_etc_conf_d_path), "#{Capistrano::BaseHelper.user_app_env_underscore}.conf")
+      symlink   = File.join(fetch(:monit_etc_conf_d_path), "#{Capistrano::BaseHelper.user_app_env_underscore}.conf")
       run("[ ! -h #{symlink} ]   || #{sudo} rm -f #{symlink}")
       run("[ ! -d #{fetch(:monit_dir)} ] || #{sudo} rm -f #{fetch(:monit_dir)}")
     end

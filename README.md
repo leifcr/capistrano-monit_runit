@@ -1,6 +1,6 @@
 # Capistrano - Base helpers
 
-This libary is a helper library for capistrano tasks that setup monit/runit for various services.
+This libary is a helper library for capistrano tasks that setup [runit](smarden.org/runit/) and [monit](http://mmonit.com/monit) for various services.
 
 ## Services for Monit and Runit
 
@@ -83,7 +83,7 @@ See each gem if you want to start/stop each service separate instead of together
 ## Assumptions
 
 There are some assumptions when using this with capistrano.
-The following variables must be set 
+The following variables must be set
 
 * _:application_ - The application name
 * _:user_ - The username which is running the deployed application (usually deploy..)
