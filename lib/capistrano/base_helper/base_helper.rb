@@ -5,9 +5,9 @@ Capistrano::Configuration.instance(true).load do
     desc "[internal] set the capistrano instance in Capistrano::BaseHelper module"
     task :set_capistrano_instance do
       Capistrano::BaseHelper::set_capistrano_instance(self)
-    end    
+    end
   end
-  
+
   on :start, "base_helper:set_capistrano_instance"
 end
 
@@ -32,23 +32,27 @@ module Capistrano
       "#{@@capistrano_instance.fetch(:user)[0...1]}_#{environment[0...1]}_#{@@capistrano_instance.fetch(:application)}"
     end
 
+    def user_app_env_underscore_short_char_safe
+      user_app_env_underscore_short.gsub!("-","_")
+    end
+
     def user_app_env_path
       File.join(get_capistrano_instance.fetch(:user), "#{get_capistrano_instance.fetch(:application)}_#{environment}")
     end
 
-    ## 
+    ##
     # Automatically sets the environment based on presence of
     # :stage (multistage)
-    # :rails_env 
-    # RAILS_ENV variable; 
-    # 
+    # :rails_env
+    # RAILS_ENV variable;
+    #
     # Defaults to "production" if not found
     #
     def environment
       if @@capistrano_instance.exists?(:rails_env)
         @@capistrano_instance.fetch(:rails_env)
       elsif @@capistrano_instance.exists?(:rack_env)
-        @@capistrano_instance.fetch(:rack_env)        
+        @@capistrano_instance.fetch(:rack_env)
       elsif @@capistrano_instance.exists?(:stage)
         @@capistrano_instance.fetch(:stage)
       elsif(ENV['RAILS_ENV'])
@@ -79,15 +83,15 @@ module Capistrano
       Capistrano::CLI.ui.agree(message)
     end
 
-    ## 
+    ##
     # Generate a config file by parsing an ERB template and uploading the file
     # Fetches local file and uploads it to remote_file
     # Make sure your user has the right permissions.
-    # 
+    #
     # @local_file full path to local file
     # @remote_file full path to remote file
     # @use_sudo use sudo or not...
-    # 
+    #
     def generate_and_upload_config(local_file, remote_file, use_sudo=false)
       temp_file  = '/tmp/' + File.basename(local_file)
       erb_buffer =  Capistrano::BaseHelper::parse_config(local_file)
@@ -120,7 +124,7 @@ module Capistrano
     def prepare_path(path, user, group, use_sudo = false)
       commands = []
       commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} mkdir -p #{path}"
-      commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} chown #{user}:#{group} #{path} -R" 
+      commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} chown #{user}:#{group} #{path} -R"
       commands << "#{use_sudo ? @@capistrano_instance.sudo : ""} chmod +rw #{path}"
       @@capistrano_instance.run commands.join(" &&")
     end
@@ -137,6 +141,6 @@ module Capistrano
 
       results == [true]
     end
-    
+
   end
 end
