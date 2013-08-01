@@ -1,6 +1,7 @@
 Capistrano::Configuration.instance(true).load do
-  _cset :pids_path, File.join(fetch(:shared_path), "pids")
-  _cset :sockets_path, File.join(fetch(:shared_path), "sockets")
+  _cset :pids_path,    defer { File.join(fetch(:shared_path), "pids") }
+  _cset :sockets_path, defer { File.join(fetch(:shared_path), "sockets") }
+
   namespace :base_helper do
     desc "[internal] set the capistrano instance in Capistrano::BaseHelper module"
     task :set_capistrano_instance do
