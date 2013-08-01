@@ -5,7 +5,7 @@
 # Available services: shared_path/monit/available
 # Enabled services: shared_path/monit/enabled
 # Application "global" config: shared_path/monit/application.conf <-- in this: include shared_path/monit/enabled
-# 
+#
 # For control of monit, sudo is required, as it always runs as root. (Unfortunately.)
 #
 
@@ -13,7 +13,7 @@ Capistrano::Configuration.instance(true).load do
   _cset :monit_dir,            defer { File.join(shared_path, "monit") }
   _cset :monit_available_path, defer { File.join(monit_dir, "available") }
   _cset :monit_enabled_path,   defer { File.join(monit_dir, "enabled") }
-  _cset :monit_etc_path,       File.join("/etc", "monit") 
+  _cset :monit_etc_path,       File.join("/etc", "monit")
   _cset :monit_etc_conf_d_path,  defer { File.join(monit_etc_path, "conf.d") }
   _cset :monit_application_group_name,  defer { "#{fetch(:user)}_#{fetch(:application)}_#{Capistrano::BaseHelper.environment}" }
 
@@ -33,7 +33,7 @@ Capistrano::Configuration.instance(true).load do
   _cset :monit_local_application_conf, File.join(File.expand_path(File.join(File.dirname(__FILE__),"../../../templates", "monit")), "app_include.conf.erb")
 
   _cset :monit_remote_monitrc, File.join("/etc","monit","monitrc")
-  _cset :monit_remote_application_conf, File.join(fetch(:monit_dir), "monit.conf")
+  _cset :monit_remote_application_conf, defer { File.join(fetch(:monit_dir), "monit.conf") }
 
   #after "deploy:update", "monit:enable"
   after "deploy:setup", "monit:setup"
@@ -50,7 +50,7 @@ Capistrano::Configuration.instance(true).load do
 
   before "monit:disable", "monit:unmonitor"
   after "monit:disable", "monit:reload"
-  
+
   before "monit:purge", "monit:unmonitor"
 
   namespace :monit do
@@ -95,7 +95,7 @@ Capistrano::Configuration.instance(true).load do
       # symlink to include file
       run("[ -h #{symlink} ] || #{sudo} ln -sf #{real_conf} #{symlink}")
     end
- 
+
     desc "Disable monit services for application"
     task :disable, :roles => [:app, :db, :web] do
       symlink   = File.join(fetch(:monit_etc_conf_d_path), "#{Capistrano::BaseHelper.user_app_env_underscore}.conf")
@@ -112,17 +112,17 @@ Capistrano::Configuration.instance(true).load do
     desc "Monitor the application"
     task :monitor, :roles => [:app, :db, :web] do
       Capistrano::MonitBase::Application::command_monit_group(fetch(:monit_application_group_name), "monitor")
-    end 
+    end
 
     desc "Unmonitor the application"
     task :unmonitor, :roles => [:app, :db, :web] do
       Capistrano::MonitBase::Application::command_monit_group(fetch(:monit_application_group_name), "unmonitor")
-    end 
+    end
 
     desc "Stop monitoring the application permanent (Monit saves state)"
     task :stop, :roles => [:app, :db, :web] do
       Capistrano::MonitBase::Application::command_monit_group(fetch(:monit_application_group_name), "stop")
-    end 
+    end
 
     desc "Start monitoring the application permanent (Monit saves state)"
     task :start, :roles => [:app, :db, :web] do
@@ -185,8 +185,8 @@ module Capistrano
       ##
       # Command a single monit service
       #
-      # The service name scheme is recommended to be 
-      # "#{user}_#{application}_#{environment}_#{service}" 
+      # The service name scheme is recommended to be
+      # "#{user}_#{application}_#{environment}_#{service}"
       #
       def command_monit(command, service_name="", arguments="")
         c = Capistrano::BaseHelper.get_capistrano_instance
@@ -198,7 +198,7 @@ module Capistrano
       # The service name is the same as the conf file name for the service.
       # E.g. puma.conf
       #
-      # This will symlink the service to enabled service, but not start or reload monit configuration 
+      # This will symlink the service to enabled service, but not start or reload monit configuration
       #
       def enable(service_conf_filename)
         c = Capistrano::BaseHelper.get_capistrano_instance
@@ -209,7 +209,7 @@ module Capistrano
         c = Capistrano::BaseHelper.get_capistrano_instance
         c.run("rm -f #{File.join(c.fetch(:monit_enabled_path), service_conf_filename)}")
       end
-    end  
+    end
   end
 end
 
