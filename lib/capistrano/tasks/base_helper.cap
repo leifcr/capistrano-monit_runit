@@ -1,0 +1,16 @@
+namespace :base_helper do
+  desc "[internal] set the capistrano instance in Capistrano::BaseHelper module"
+  task :set_capistrano_instance do
+    Capistrano::BaseHelper::set_capistrano_instance(self)
+  end
+end
+
+namespace :load do
+  task :defaults do
+    set :pids_path,    Proc.new { File.join(fetch(:shared_path), "pids") }
+    set :sockets_path, Proc.new { File.join(fetch(:shared_path), "sockets") }
+  end
+end
+
+# Might be on deploy:starting?
+on :start, "base_helper:set_capistrano_instance"

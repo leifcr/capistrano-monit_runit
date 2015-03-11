@@ -1,9 +1,7 @@
 source 'http://rubygems.org'
 
-gem "capistrano",     ">= 2.15.5"
-
+gem 'capistrano', '~> 3.4'
 group :development do
-  gem "bundler", ">= 1.3.0"
-  gem "jeweler", "~> 1.8.6"
-  # gem "rdoc", ">=2.4"
+  gem 'bundler', '>= 1.7'
+  gem 'jeweler', '~> 2.0'
 end

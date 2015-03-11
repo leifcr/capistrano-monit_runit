@@ -9,3 +9,4 @@ end
 try_require 'capistrano/base_helper/base_helper'
 try_require 'capistrano/base_helper/runit_base'
 try_require 'capistrano/base_helper/monit_base'
+try_require 'capistrano/tasks/base_helper.cap'

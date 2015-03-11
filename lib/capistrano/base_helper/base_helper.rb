@@ -1,24 +1,10 @@
-Capistrano::Configuration.instance(true).load do
-  _cset :pids_path,    defer { File.join(fetch(:shared_path), "pids") }
-  _cset :sockets_path, defer { File.join(fetch(:shared_path), "sockets") }
-
-  namespace :base_helper do
-    desc "[internal] set the capistrano instance in Capistrano::BaseHelper module"
-    task :set_capistrano_instance do
-      Capistrano::BaseHelper::set_capistrano_instance(self)
-    end
-  end
-
-  on :start, "base_helper:set_capistrano_instance"
-end
-
 module Capistrano
   module BaseHelper
     @@capistrano_instance
     module_function
 
-    def set_capistrano_instance(cap_instance)
-      @@capistrano_instance = cap_instance
+    def set_capistrano_instance(capistrano_instance)
+      @@capistrano_instance = capistrano_instance
     end
 
     def get_capistrano_instance
@@ -80,8 +66,8 @@ module Capistrano
     ##
     # Prompts the user for a message to agree/decline
     #
-    def ask(message, default=true)
-      Capistrano::CLI.ui.agree(message)
+    def ask(message)
+      @@capistrano_instance.ask(message)
     end
 
     ##
@@ -102,7 +88,7 @@ module Capistrano
       @@capistrano_instance.upload temp_file, temp_file, :via => :scp
       # create any folders required,
       # move temporary file to remote file
-      @@capistrano_instance.run "#{use_sudo ? @@capistrano_instance.sudo : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? "sudo" : ""} mv #{temp_file} #{remote_file}"
+      @@capistrano_instance.execute "#{use_sudo ? @@capistrano_instance.sudo : ""} mkdir -p #{Pathname.new(remote_file).dirname}; #{use_sudo ? "sudo" : ""} mv #{temp_file} #{remote_file}"
       # remove temp file
       `rm #{temp_file}`
     end
