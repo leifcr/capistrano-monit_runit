@@ -1,30 +1,15 @@
 module Capistrano
   module BaseHelper
-    @@capistrano_instance
-    module_function
-
-    def set_capistrano_instance(capistrano_instance)
-      @@capistrano_instance = capistrano_instance
-    end
-
-    def get_capistrano_instance
-      @@capistrano_instance
-    end
-
     def user_app_env_underscore
-      "#{@@capistrano_instance.fetch(:user)}_#{@@capistrano_instance.fetch(:application)}_#{environment}"
+      "#{fetch(:user)}_#{fetch(:application)}_#{environment}"
     end
 
     def user_app_env_underscore_short
-      "#{@@capistrano_instance.fetch(:user)[0...1]}_#{environment[0...1]}_#{@@capistrano_instance.fetch(:application)}"
+      "#{fetch(:user)[0...1]}_#{environment[0...1]}_#{fetch(:application)}"
     end
 
     def user_app_env_underscore_short_char_safe
       user_app_env_underscore_short.gsub!("-","_")
-    end
-
-    def user_app_env_path
-      File.join(get_capistrano_instance.fetch(:user), "#{get_capistrano_instance.fetch(:application)}_#{environment}")
     end
 
     ##
@@ -36,21 +21,26 @@ module Capistrano
     # Defaults to "production" if not found
     #
     def environment
-      if @@capistrano_instance.exists?(:rails_env)
-        @@capistrano_instance.fetch(:rails_env)
-      elsif @@capistrano_instance.exists?(:rack_env)
-        @@capistrano_instance.fetch(:rack_env)
-      elsif @@capistrano_instance.exists?(:stage)
-        @@capistrano_instance.fetch(:stage)
+      if exists?(:rails_env)
+        fetch(:rails_env)
+      elsif exists?(:rack_env)
+        fetch(:rack_env)
+      elsif exists?(:stage)
+        fetch(:stage)
       elsif(ENV['RAILS_ENV'])
         ENV['RAILS_ENV']
       else
         puts "------------------------------------------------------------------"
-        puts "- Stage, rack or rails environment isn't set in                  -"
+        puts "- WStage, rack or rails environment isn't set in                  -"
         puts "- :stage or :rails_env or :rack_env, defaulting to 'production'  -"
         puts "------------------------------------------------------------------"
         "production"
       end
+    end
+
+    def template_to_s(template_file)
+      raise "Cannot find templte #{template_file}" unless File.exists?(template_file)
+      ERB.new(File.read(config_file)).result(binding)
     end
 
     ##
@@ -59,7 +49,7 @@ module Capistrano
     def parse_config(file)
       require 'erb'  #render not available in Capistrano 2
       template  = File.read(file)          # read it
-      returnval = ERB.new(template).result(binding)   # parse it
+      return ERB.new(template).result(binding)   # parse it
       return returnval
     end
 

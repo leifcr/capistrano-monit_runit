@@ -1,6 +1,6 @@
 #!/bin/sh -e
-# <% c = Capistrano::BaseHelper::get_capistrano_instance %>
-# Run services for <%= c.fetch(:application) %> as <%= c.fetch(:user) %> in env <%= Capistrano::BaseHelper.environment %>
+#
+# Run services for <%= fetch(:application) %> as <%= fetch(:user) %> in env <%= environment %>
 #
 
 # Redirect stderr so everything ends up in the log file
@@ -8,7 +8,7 @@ exec 2>&1
 
 # Announce startup
 #
-echo "Starting all services for <%= c.fetch(:application) %> running as <%= c.fetch(:user) %>"
+echo "Starting all services for <%= fetch(:application) %> running as <%= fetch(:user) %>"
 
-# Start all services in folder <%= c.fetch(:runit_dir) %>
-exec chpst -u <%= c.fetch(:user) %> runsvdir "<%= c.fetch(:runit_dir) %>"
+# Start all services in folder <%= fetch(:runit_dir) %>
+exec chpst -u <%= fetch(:user) %> runsvdir "<%= fetch(:runit_dir) %>"

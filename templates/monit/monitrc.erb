@@ -1,29 +1,28 @@
-<% c = Capistrano::BaseHelper::get_capistrano_instance %>
-set daemon <%= c.fetch(:monit_daemon_time) %>
-  with start delay <%= c.fetch(:monit_start_delay) %>
+set daemon <%= fetch(:monit_daemon_time) %>
+  with start delay <%= fetch(:monit_start_delay) %>
 
 set logfile syslog facility log_daemon
 
-set mailserver <%= c.fetch(:monit_mailserver) %>
+set mailserver <%= fetch(:monit_mailserver) %>
 
 set eventqueue
     basedir /var/monit  # set the base directory where events will be stored
 #    slots 1000          # optionaly limit the queue size
 
 set mail-format {
-  from: <%= c.fetch(:monit_mail_sender) %>
+  from: <%= fetch(:monit_mail_sender) %>
   subject: $SERVICE $EVENT $HOST
   message: Monit $ACTION $SERVICE at $DATE on $HOST: $DESCRIPTION.
 }
-<% unless c.fetch(:monit_mail_reciever).nil? %>
-set alert <%= c.fetch(:monit_mail_reciever) %> NOT ON { action, instance, pid, ppid }
+<% unless fetch(:monit_mail_reciever).nil? %>
+set alert <%= fetch(:monit_mail_reciever) %> NOT ON { action, instance, pid, ppid }
 <% end %>
 
-<% unless c.fetch(:monit_use_httpd) == "false" %>
-set httpd port <%= c.fetch(:monit_httpd_port) %>
-  <%= "use address #{c.fetch(:monit_httpd_bind_address, "localhost")}" unless c.fetch(:monit_httpd_bind_address).nil? %> 
-  <%= "allow #{c.fetch(:monit_httpd_allow_address)}" unless c.fetch(:monit_httpd_allow_address).nil? %>
-  <%= "signature #{c.fetch(:monit_httpd_signature)}" %>
+<% unless fetch(:monit_use_httpd) == "false" %>
+set httpd port <%= fetch(:monit_httpd_port) %>
+  <%= "use address #{fetch(:monit_httpd_bind_address, "localhost")}" unless fetch(:monit_httpd_bind_address).nil? %>
+  <%= "allow #{fetch(:monit_httpd_allow_address)}" unless fetch(:monit_httpd_allow_address).nil? %>
+  <%= "signature #{fetch(:monit_httpd_signature)}" %>
 <% end %>
 
 include /etc/monit/conf.d/*.conf
