@@ -9,8 +9,8 @@
 
 require 'capistrano/dsl/base_paths'
 require 'capistrano/dsl/runit_paths'
-require 'capistrano/helpers/base_helper'
-require 'capistrano/helpers/runit_helper'
+require 'capistrano/helpers/base'
+require 'capistrano/helpers/runit'
 
 include Capistrano::DSL::BasePaths
 include Capistrano::DSL::RunitPaths
@@ -36,10 +36,10 @@ namespace :runit do
   task :setup do
     on roles(:app) do |host|
       info "RUNIT: Setting up initial runit configuration on #{host}"
-      if test "[ -d #{fetch(:runit_dir)}/.env ]"
+      if test "[ ! -d #{fetch(:runit_dir)}/.env ]"
         execute :mkdir, "-p '#{fetch(:runit_dir)}/.env'"
       end
-      execute :echo, "$HOME > '#{File.join(fetch(:runit_dir), 'env', 'HOME')}'"
+      upload! StringIO.new('$HOME'), "#{File.join(fetch(:runit_dir), '.env', 'HOME')}"
     end
   end
 
@@ -47,6 +47,8 @@ namespace :runit do
     # '[INTERNAL] create /etc/sv folders and upload base templates needed'
     task :runit_create_app_services do
       on roles(:app) do |host|
+        # set :pw, ask("Sudo password", '')
+        # execute :echo, "#{fetch(:pw)} | sudo -S ls /"
         execute :sudo, :mkdir, "-p '#{runit_base_path}'"
         execute :sudo, :chown, "#{c.fetch(:user)}:root '#{runit_user_base_path}'"
         execute :sudo, :chown, "#{c.fetch(:user)}:root '#{runit_base_path}'"
@@ -68,7 +70,7 @@ namespace :runit do
     task :runit_create_app_log_services do
       on roles(:app) do |host|
         execute :sudo, :mkdir, "-p #{runit_base_log_path}"
-        execute :sudo, :chown, "#{fetch(:user)}:root 'runit_base_log_path'"
+        execute :sudo, :chown, "#{fetch(:user)}:root '#{runit_base_log_path}'"
         execute :sudo, :mkdir, "-p '#{runit_var_log_service_path}'"
         execute :sudo, :chown, "-R #{fetch(:runit_log_user)}:#{c.fetch(:runit_log_group)} '#{runit_var_log_service_path}'" # rubocop:disable Metrics/LineLength:
 
@@ -135,6 +137,6 @@ end
 before 'runit:purge',     'runit:stop'
 
 after 'deploy:updated',   'runit:enable'
-after 'deploy:setup',     'runit:setup'
+# after 'deploy:setup',     'runit:setup'
 after 'runit:setup',      'runit:setup:runit_create_app_services'
 after 'runit:setup:runit_create_app_services', 'runit:setup:runit_create_app_log_services'

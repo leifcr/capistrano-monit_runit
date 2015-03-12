@@ -156,7 +156,7 @@ namespace :monit do
   end
 
   desc 'Status monit (global)'
-  task :status, on_error: :continue do
+  task :status do
     on roles(:app) do |host|
       info "MONIT: Global: Status on #{host}"
       command_monit('status')
@@ -164,7 +164,7 @@ namespace :monit do
   end
 
   desc 'Summary monit (global)'
-  task :summary, on_error: :continue do
+  task :summary do
     on roles(:app) do |host|
       info "MONIT: Global: Summary for #{host}"
       command_monit('summary')
@@ -172,7 +172,7 @@ namespace :monit do
   end
 
   desc 'Validate monit (global)'
-  task :validate, on_error: :continue do
+  task :validate do
     on roles(:app) do |host|
       info "MONIT: Global: Validating config on #{host}"
       command_monit('validate')
@@ -181,9 +181,8 @@ namespace :monit do
 end
 
 # after 'deploy:update', 'monit:enable'
-after 'deploy:setup', 'monit:setup'
+# after 'deploy:setup', 'monit:setup'
 before 'monit:setup',  'monit:main_config'
-
 after 'monit:setup', 'monit:enable'
 after 'monit:enable', 'monit:reload'
 

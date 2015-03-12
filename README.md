@@ -8,6 +8,31 @@ Note: This has been updated to support Capistrano >= 3.4. If you still use Capis
 
 This gem stays at 3.x for capistrano 3, as it seems logical.
 
+## Sudoing
+
+The setup process requires sudo on some files and folders upon creation.
+
+You must either do the job manually or add this to the sudoers file:
+
+```
+Cmnd_Alias RUNITCAPISTRANO = ,
+deploy  ALL=NOPASSWD: /bin/chmod u+x /etc/sv/*
+deploy  ALL=NOPASSWD: /bin/chmod g+x /etc/sv/*
+deploy  ALL=NOPASSWD: /bin/chown deploy\:root /etc/sv/*
+deploy  ALL=NOPASSWD: /bin/chown -R deploy\:root /etc/sv/*
+deploy  ALL=NOPASSWD: /bin/chown -R deploy\:root /etc/service/*
+deploy  ALL=NOPASSWD: /bin/chown -R syslog\:syslog /var/log/service*
+deploy  ALL=NOPASSWD: /bin/mkdir -p /etc/service/*
+deploy  ALL=NOPASSWD: /bin/mkdir /etc/service/*
+deploy  ALL=NOPASSWD: /bin/mkdir -p /var/log/service*
+deploy  ALL=NOPASSWD: /bin/mkdir -p /etc/sv/*
+deploy  ALL=NOPASSWD: /bin/mkdir /etc/sv/*
+deploy  ALL=NOPASSWD: /bin/rm -rf /etc/service/*
+
+```
+,/bin/chown myuser:mygroup /var/www/html/*,/bin/chmod 755 /var/www/html2/myapp/*.txt
+
+
 ## Services for Monit and Runit
 
 Services created:

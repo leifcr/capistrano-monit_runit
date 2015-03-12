@@ -24,11 +24,11 @@ module Capistrano
       # Defaults to "production" if not found
       #
       def environment # rubocop:disable Metrics/MethodLength
-        if exists?(:rails_env)
+        if !fetch(:rails_env).nil?
           fetch(:rails_env)
-        elsif exists?(:rack_env)
+        elsif !fetch(:rack_env).nil?
           fetch(:rack_env)
-        elsif exists?(:stage)
+        elsif !fetch(:stage).nil?
           fetch(:stage)
         else
           info '---------------------------------------------------------------'
