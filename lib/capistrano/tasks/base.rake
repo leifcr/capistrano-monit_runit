@@ -1,6 +1,6 @@
 namespace :load do
   task :defaults do
-    set :pids_path,    Proc.new { File.join(fetch(:shared_path), "pids") }
-    set :sockets_path, Proc.new { File.join(fetch(:shared_path), "sockets") }
+    set :pids_path,    proc { shared_path.join('pids') }
+    set :sockets_path, proc { shared_path.join('sockets') }
   end
 end
