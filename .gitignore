@@ -20,3 +20,4 @@ pkg/*
 *.gem
 
 *.sublime-workspace
+.rake_tasks
