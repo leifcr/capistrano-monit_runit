@@ -17,8 +17,6 @@ namespace :load do
     set :monit_dir,            proc { shared_path.join('monit') }
     set :monit_available_path, proc { File.join(fetch(:monit_dir), 'available') }
     set :monit_enabled_path,   proc { File.join(fetch(:monit_dir), 'enabled') }
-    set :monit_etc_path,       File.join('/etc', 'monit')
-    set :monit_etc_conf_d_path,  proc { File.join(fetch(:monit_etc_path), 'conf.d') }
     set :monit_application_group_name,  proc { user_app_env_underscore }
 
     set :monit_mailserver,          'localhost'
@@ -36,7 +34,6 @@ namespace :load do
     set :monit_monitrc_template,           File.join(File.expand_path(File.join(File.dirname(__FILE__), '../../../templates', 'monit')), 'monitrc.erb')  # rubocop:disable Metrics/LineLength:
     set :monit_application_conf_template,  File.join(File.expand_path(File.join(File.dirname(__FILE__), '../../../templates', 'monit')), 'app_include.conf.erb')  # rubocop:disable Metrics/LineLength:
 
-    set :monit_monitrc_file, proc { File.join(fetch(:monit_etc_path), 'monitrc') }
     set :monit_application_conf_file, proc { File.join(fetch(:monit_dir), 'monit.conf') }
   end
 end
@@ -58,15 +55,35 @@ namespace :monit do
     end
   end
 
+  desc 'Get the config needed to add to sudoers'
+  task :sudoers do
+    info "---------------------------------------------------------------"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_etc_path}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{monit_etc_conf_d_path}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 2775 #{monit_etc_conf_d_path}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:group)}:root #{monit_etc_path}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:group)}:root #{monit_etc_conf_d_path}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root:root #{monit_monitrc_file}"
+    info "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
+    info "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
+    info "---------------------------------------------------------------"
+    # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
+  end
+
   desc 'Setup main monit config file (/etc/monit/monitrc)'
   task :main_config do
     on roles(:app) do |host|
       set :createmonitrc, ask("Create #{monit_monitrc_file} [Y/n]", 'Y')
       if fetch(:createmonitrc).downcase! == 'y' || fetch(:createmonitrc).downcase! == 'yes'
-        info "MONIT: Creating #{fetch(:monit_monitrc_file)} on #{host}"
+        info "MONIT: Creating #{monit_monitrc_file} on #{host}"
+        execute :sudo, :mkdir, "-p #{monit_etc_conf_d_path}"
+        execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_path}"
+        execute :sudo, :chmod "0755 #{monit_etc_path}"
         upload! template_to_s(fetch(:monit_monitrc_template)), monit_monitrc_file
-        execute :sudo, :chmod, "700 #{fetch(:monit_monitrc_file)}"
-        execute :sudo, :chown, "root:root #{fetch(:monit_monitrc_file)}"
+        execute :sudo, :chmod, "0700 #{monit_monitrc_file}"
+        execute :sudo, :chown, "root:root #{monit_monitrc_file}"
         execute :sudo, :service, 'monit restart'
         info "MONIT: Sleeping for #{fetch(:monit_start_delay).to_i} seconds to wait for monit to be ready"
         sleep(fetch(:monit_start_delay).to_i)
@@ -79,7 +96,7 @@ namespace :monit do
     on roles(:app) do |host|
       if test("[ -h #{monit_etc_app_symlink} ]")
         info "MONIT: Enabling for #{fetch(:application)} on #{host}"
-        exeute :sudo, :ln, "sf #{fetch(:monit_application_conf_file)} #{monit_etc_app_symlink}"
+        exeute :ln, "-sf #{fetch(:monit_application_conf_file)} #{monit_etc_app_symlink}"
       else
         info "MONIT: Already enabled for #{fetch(:application)} on #{host}"
       end
@@ -91,7 +108,7 @@ namespace :monit do
     on roles(:app) do |host|
       if test("[ ! -h #{monit_etc_app_symlink} ]")
         info "MONIT: Disabling for #{fetch(:application)} on #{host}"
-        exeute :sudo, :rm, "f #{monit_etc_app_symlink}"
+        execute :rm, "-ff #{monit_etc_app_symlink}"
       else
         info "MONIT: Already disabled for #{fetch(:application)} on #{host}"
       end

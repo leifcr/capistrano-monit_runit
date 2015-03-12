@@ -32,6 +32,14 @@ namespace :load do
 end
 
 namespace :runit do
+  desc 'Get the config needed to add to sudoers'
+  task :sudoers do
+    info "---------------------------------------------------------------"
+    info "TODO!"
+    info "---------------------------------------------------------------"
+    # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
+  end
+
   desc 'Setup runit for the application'
   task :setup do
     on roles(:app) do |host|
