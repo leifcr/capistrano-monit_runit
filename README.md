@@ -2,7 +2,11 @@
 
 This libary is a helper library for capistrano tasks that setup [runit](smarden.org/runit/) and [monit](http://mmonit.com/monit) for various services.
 
-Note: This has been updated to support Capistrano 3.x. If you still use Capistrano 2.x, see the capistrano2 branch
+Note: This has been updated to support Capistrano >= 3.4. If you still use Capistrano 2.x, see the capistrano2 branch
+
+## Versioning
+
+This gem stays at 3.x for capistrano 3, as it seems logical.
 
 ## Services for Monit and Runit
 
