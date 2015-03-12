@@ -7,6 +7,16 @@
 # Everything that should run as either a service or deamon,
 # can and should use runit
 
+require 'capistrano/dsl/base_paths'
+require 'capistrano/dsl/runit_paths'
+require 'capistrano/helpers/base_helper'
+require 'capistrano/helpers/runit_helper'
+
+include Capistrano::DSL::BasePaths
+include Capistrano::DSL::RunitPaths
+include Capistrano::Helpers::Base
+include Capistrano::Helpers::Runit
+
 namespace :load do
   task :defaults do
     set :runit_dir,               proc { shared_path.join('runit') }

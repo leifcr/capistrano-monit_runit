@@ -7,6 +7,11 @@
 # Let monit monitor any long-running processes to ensure they keep
 # within the limits set by you.
 
+include Capistrano::DSL::BasePaths
+include Capistrano::DSL::MonitPaths
+include Capistrano::Helpers::Base
+include Capistrano::Helpers::Monit
+
 namespace :load do
   task :defaults do
     set :monit_dir,            proc { shared_path.join('monit') }

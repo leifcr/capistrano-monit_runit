@@ -1,6 +1,8 @@
-# Capistrano - Base helpers
+# Capistrano - Monit and Runit helpers
 
 This libary is a helper library for capistrano tasks that setup [runit](smarden.org/runit/) and [monit](http://mmonit.com/monit) for various services.
+
+Note: This has been updated to support Capistrano 3.x. If you still use Capistrano 2.x, see the capistrano2 branch
 
 ## Services for Monit and Runit
 
@@ -44,15 +46,15 @@ You can add this to deploy.rb or env.rb in order to automatically monitor/unmoni
 It is important to unmonitor tasks while deploying as they can trigger stops/restarts to the app that monit thinks are "crashes"
 
 ```ruby
-before "deploy", "monit:unmonitor"
-after  "deploy", "monit:monitor"
+before "deploy:started",  "monit:unmonitor"
+after  "deploy:finished", "monit:monitor"
 ```
 
 If you want monit to automatically start/stop runit instead of triggering seperately
 
 ```ruby
 before "monit:unmonitor", "monit:stop"
-after  "monit:monitor", "monit:start"
+after  "monit:monitor",   "monit:start"
 ```
 
 ### Runit
@@ -89,30 +91,6 @@ The following variables must be set
 * _:user_ - The username which is running the deployed application (usually deploy..)
 * _:group_ - The groupname which is running the deployed application (usually deploy..)
 
-
-## Helpers
-
-Upload a configuration file:
-
-```ruby
-# Generate a config file by parsing an ERB template and uploading the file. Both paths should be absolute
-Capistrano::BaseHelper::generate_and_upload_config(local_file, remote_file, use_sudo=false)
-```
-
-Run a rake task:
-```ruby
-# Execute a rake taske using bundle and the proper env.
-Capistrano::BaseHelper::run_rake(task)
-```
-
-Ask the user a message to agree/disagree
-```ruby
-Capistrano::BaseHelper::ask(message)
-```
-
-See base_helper/base_helper.rb for further documentation.
-And for runit info, base_helper/runit_base.rb for further documentation.
-
 ## Contributing
 
 * Fork the project
@@ -122,5 +100,5 @@ And for runit info, base_helper/runit_base.rb for further documentation.
 
 ## Copyright
 
-(c) 2013 Leif Ringstad. See LICENSE.txt for details
+(c) 2013-2015 Leif Ringstad. See LICENSE.txt for details
 
