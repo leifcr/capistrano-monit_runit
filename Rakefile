@@ -14,8 +14,8 @@ require 'rake'
 require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = 'capistrano-monit-runit'
-  gem.homepage = 'https://github.com/leifcr/capistrano-monit-runit'
+  gem.name = 'capistrano-monit_runit'
+  gem.homepage = 'https://github.com/leifcr/capistrano-monit_runit'
   gem.license = 'MIT'
   gem.summary = 'Helpers for capistrano recipes using runit/monit'
   gem.description = 'Helpers for capistrano recipes using runit/monit. Currently: capistrano-puma and capistrano-delayed_job'
