@@ -13,8 +13,8 @@ module Capistrano
     # Control / Command a monit group
     # namescheme: user_application_environment "#{user}_#{application}_#{environment}"
     #
-    def command_monit_group(application_group_name, command, arguments = '')
-      command_monit(command, "-g #{application_group_name} #{arguments}")
+    def command_monit_group(command, arguments = '')
+      command_monit(command, "-g #{fetch(:monit_application_group_name)} #{arguments}")
     end
 
     ##
