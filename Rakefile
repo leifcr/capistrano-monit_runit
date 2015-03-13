@@ -18,10 +18,12 @@ Jeweler::Tasks.new do |gem|
   gem.homepage = 'https://github.com/leifcr/capistrano-monit_runit'
   gem.license = 'MIT'
   gem.summary = 'Helpers for capistrano recipes using runit/monit'
-  gem.description = 'Helpers for capistrano recipes using runit/monit. Currently: capistrano-puma and capistrano-delayed_job'
+  gem.description = 'Helpers for capistrano recipes using runit/monit.'
   gem.email = 'leifcr@gmail.com'
   gem.authors = ['Leif Ringstad']
   gem.files.exclude '.ruby-*'
+  gem.files.exclude '*.sublime-project'
+  gem.files.exclude '.rubocop.yml'
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new

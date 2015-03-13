@@ -11,23 +11,21 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib"]
   s.authors = ["Leif Ringstad"]
-  s.date = "2015-03-12"
-  s.description = "Helpers for capistrano recipes using runit/monit. Currently: capistrano-puma and capistrano-delayed_job"
+  s.date = "2015-03-13"
+  s.description = "Helpers for capistrano recipes using runit/monit."
   s.email = "leifcr@gmail.com"
   s.extra_rdoc_files = [
     "LICENSE",
     "README.md"
   ]
   s.files = [
-    ".rubocop.yml",
     "Gemfile",
     "Gemfile.lock",
     "LICENSE",
     "README.md",
     "Rakefile",
     "VERSION",
-    "capistrano-monit_runit.sublime-project",
-    "lib/capistrano/base_helper.rb",
+    "capistrano-monit_runit.gemspec",
     "lib/capistrano/capistrano-monit_runit.rb",
     "lib/capistrano/dsl/base_paths.rb",
     "lib/capistrano/dsl/monit_paths.rb",
