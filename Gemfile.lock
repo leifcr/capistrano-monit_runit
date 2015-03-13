@@ -62,6 +62,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (>= 1.7)
+  bundler (~> 1.7)
   capistrano (~> 3.4)
   jeweler (~> 2.0)
