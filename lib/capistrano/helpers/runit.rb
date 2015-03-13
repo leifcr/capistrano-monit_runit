@@ -56,36 +56,24 @@ module Capistrano
 
       def runit_set_executable_files(service_name) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
         if test("[ -f '#{runit_service_run_config_file(service_name)}']")
-          execute :chmod, 'u+x runit_service_run_config_file(service_name)'
-          execute :chmod, 'g+x runit_service_run_config_file(service_name)'
+          execute :chmod, "775 #{runit_service_run_config_file(service_name)}"
         end
         if test("[ -f '#{runit_service_finish_config_file(service_name)}']")
-          execute :chmod, 'u+x runit_service_finish_config_file(service_name)'
-          execute :chmod, 'g+x runit_service_finish_config_file(service_name)'
+          execute :chmod, "775 #{runit_service_finish_config_file(service_name)}"
         end
 
         if test("[ -f '#{runit_service_log_run_file(service_name)}']")
-          execute :chmod, 'u+x runit_service_log_run_file(service_name)'
-          execute :chmod, 'g+x runit_service_log_run_file(service_name)'
+          execute :chmod, "775 #{runit_service_log_run_file(service_name)}"
         end
 
         if test("[ -d '#{runit_service_control_path(service_name)}']") # rubocop:disable Style/GuardClause
-          execute :chmod, 'u+x -R runit_service_control_path(service_name)'
-          execute :chmod, 'g+x -R runit_service_control_path(service_name)'
+          execute :chmod, "775 -R #{runit_service_control_path(service_name)}"
+          # execute :chmod, 'u+x -R runit_service_control_path(service_name)'
+          # execute :chmod, 'g+x -R runit_service_control_path(service_name)'
         end
       end
 
       # End - single service control functions
-
-      def runit_setup_log_folders_and_permissions(log_path, user = nil, group = nil)
-        user  = fetch(:user) if user.nil?
-        group = 'syslog' if group.nil?
-        # Have to sudo in case path is in /var/log
-        execute :sudo, :mkdir, "-p #{log_path}"
-        execute :sudo, :chown, "-R #{user}:#{group} #{log_path}"
-        execute :sudo, :chmod, "u+w #{log_path}"
-        execute :sudo, :chmod, "g+w #{log_path}"
-      end
     end
   end
 end

@@ -22,7 +22,7 @@ module Capistrano
       end
 
       def runit_base_path
-        File.join(runit_etc_sv_path, user_app_env_folder)
+        File.join(runit_user_base_path, app_env_folder)
       end
 
       def runit_base_log_path
@@ -41,9 +41,17 @@ module Capistrano
         File.join(runit_base_log_path, 'run')
       end
 
-      # /var/log/service/ ++
       def runit_var_log_service_path
-        File.join('/var', 'log', 'service', user_app_env_folder, 'runit')
+        File.join('/var', 'log', 'service')
+      end
+
+      def runit_var_log_service_single_service_path(service_name)
+        File.join(runit_var_log_service_path, user_app_env_underscore, service_name)
+      end
+
+      # /var/log/service/'usr_app_env_folder'/runit
+      def runit_var_log_service_runit_path
+        runit_var_log_service_single_service_path('runit')
       end
 
       # /etc/service

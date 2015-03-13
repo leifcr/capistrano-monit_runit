@@ -39,9 +39,9 @@ module Capistrano
         end
       end
 
-      def template_to_s(template_file)
+      def template_to_s_io(template_file)
         fail "Cannot find templte #{template_file}" unless File.exist?(template_file)
-        ERB.new(File.read(config_file)).result(binding)
+        StringIO.new(ERB.new(File.read(template_file)).result(binding))
       end
 
       ##

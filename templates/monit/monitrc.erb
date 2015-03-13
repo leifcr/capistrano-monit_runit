@@ -3,20 +3,15 @@ set daemon <%= fetch(:monit_daemon_time) %>
 
 set logfile syslog facility log_daemon
 
-set mailserver <%= fetch(:monit_mailserver) %>
+set statefile /var/lib/monit/state
+
+set idfile /var/lib/monit/id
 
 set eventqueue
     basedir /var/monit  # set the base directory where events will be stored
-#    slots 1000          # optionaly limit the queue size
+    slots 100           # optionaly limit the queue size
 
-set mail-format {
-  from: <%= fetch(:monit_mail_sender) %>
-  subject: $SERVICE $EVENT $HOST
-  message: Monit $ACTION $SERVICE at $DATE on $HOST: $DESCRIPTION.
-}
-<% unless fetch(:monit_mail_reciever).nil? %>
-set alert <%= fetch(:monit_mail_reciever) %> NOT ON { action, instance, pid, ppid }
-<% end %>
+<%= fetch(:mail_alert_settings) %>
 
 <% unless fetch(:monit_use_httpd) == "false" %>
 set httpd port <%= fetch(:monit_httpd_port) %>

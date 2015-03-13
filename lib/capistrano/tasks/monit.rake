@@ -43,13 +43,13 @@ namespace :monit do
   task :setup do
     on roles(:app) do |host|
       info "MONIT: Setting up initial monit configuration on #{host}"
-      if test "[ -d #{fetch(:monit_dir)} ]"
+      if test "[ ! -d #{fetch(:monit_dir)} ]"
         execute :mkdir, "-p #{fetch(:monit_dir)}"
       end
-      if test "[ -d #{fetch(:monit_available_path)} ]"
+      if test "[ ! -d #{fetch(:monit_available_path)} ]"
         execute :mkdir, "-p #{fetch(:monit_available_path)}"
       end
-      if test "[ -d #{fetch(:monit_enabled_path)} ]"
+      if test "[ ! -d #{fetch(:monit_enabled_path)} ]"
         execute :mkdir, "-p #{fetch(:monit_enabled_path)}"
       end
     end
@@ -57,18 +57,21 @@ namespace :monit do
 
   desc 'Get the config needed to add to sudoers'
   task :sudoers do
-    info "---------------------------------------------------------------"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_etc_path}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{monit_etc_conf_d_path}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 2775 #{monit_etc_conf_d_path}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:group)}:root #{monit_etc_path}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:group)}:root #{monit_etc_conf_d_path}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root:root #{monit_monitrc_file}"
-    info "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
-    info "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
-    info "---------------------------------------------------------------"
+    run_locally do
+      info '---------------ENTRIES FOR SUDOERS (Monit)---------------------'
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_etc_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{monit_etc_conf_d_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{monit_etc_conf_d_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_conf_d_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root\\:root #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
+      info '---------------------------------------------------------------'
+    end
     # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
   end
 
@@ -76,12 +79,17 @@ namespace :monit do
   task :main_config do
     on roles(:app) do |host|
       set :createmonitrc, ask("Create #{monit_monitrc_file} [Y/n]", 'Y')
-      if fetch(:createmonitrc).downcase! == 'y' || fetch(:createmonitrc).downcase! == 'yes'
+      if fetch(:createmonitrc) == 'Y'
         info "MONIT: Creating #{monit_monitrc_file} on #{host}"
-        execute :sudo, :mkdir, "-p #{monit_etc_conf_d_path}"
+        if test("[ ! -d #{monit_etc_conf_d_path} ]")
+          execute :sudo, :mkdir, "-p #{monit_etc_conf_d_path}"
+          execute :sudo, :chmod, "6775 #{monit_etc_conf_d_path}"
+          execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_conf_d_path}"
+        end
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_path}"
-        execute :sudo, :chmod "0755 #{monit_etc_path}"
-        upload! template_to_s(fetch(:monit_monitrc_template)), monit_monitrc_file
+        execute :sudo, :chmod, "0775 #{monit_etc_path}"
+        execute :sudo, :chown, "#{fetch(:user)}:root #{monit_monitrc_file}"
+        upload! template_to_s_io(fetch(:monit_monitrc_template)), monit_monitrc_file
         execute :sudo, :chmod, "0700 #{monit_monitrc_file}"
         execute :sudo, :chown, "root:root #{monit_monitrc_file}"
         execute :sudo, :service, 'monit restart'
@@ -94,9 +102,9 @@ namespace :monit do
   desc 'Enable monit services for application'
   task :enable do
     on roles(:app) do |host|
-      if test("[ -h #{monit_etc_app_symlink} ]")
+      if test("[ ! -h #{monit_etc_app_symlink} ]")
         info "MONIT: Enabling for #{fetch(:application)} on #{host}"
-        exeute :ln, "-sf #{fetch(:monit_application_conf_file)} #{monit_etc_app_symlink}"
+        execute :ln, "-sf #{fetch(:monit_application_conf_file)} #{monit_etc_app_symlink}"
       else
         info "MONIT: Already enabled for #{fetch(:application)} on #{host}"
       end
@@ -106,7 +114,7 @@ namespace :monit do
   desc 'Disable monit services for application'
   task :disable do
     on roles(:app) do |host|
-      if test("[ ! -h #{monit_etc_app_symlink} ]")
+      if test("[ -h #{monit_etc_app_symlink} ]")
         info "MONIT: Disabling for #{fetch(:application)} on #{host}"
         execute :rm, "-ff #{monit_etc_app_symlink}"
       else
@@ -119,7 +127,7 @@ namespace :monit do
   task :purge do
     on roles(:app) do |host|
       info "MONIT: 'Purging config on #{host}"
-      execute :rm, "-rf #{fetch(:monit_dir)}" if test("[ ! -d #{fetch(:monit_dir)} ]")
+      execute :rm, "-rf #{fetch(:monit_dir)}" if test("[ -d #{fetch(:monit_dir)} ]")
       execute :rm, "-f #{monit_etc_app_symlink}"
     end
   end
@@ -200,7 +208,7 @@ end
 # after 'deploy:update', 'monit:enable'
 # after 'deploy:setup', 'monit:setup'
 before 'monit:setup',  'monit:main_config'
-after 'monit:setup', 'monit:enable'
+# after 'monit:setup', 'monit:enable'
 after 'monit:enable', 'monit:reload'
 
 # This should be done in the app, as the sequence of restarting services can be specific

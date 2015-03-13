@@ -1,12 +1,12 @@
 #!/bin/sh
 #
-# Log output for <%= fetch(:application) %> as <%= fetch(:user) %> in env <%= environment %>
+# Log output for <%= fetch(:application) %> as <%= fetch(:user) %> in environment <%= environment %>
 #
 # make sure the log directory exists
-mkdir -p "<%= File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit") %>"
+mkdir -p "<%= runit_var_log_service_runit_path %>"
 # make sure the right owner is on the log directory
-chown -R <%= "#{fetch(:runit_log_user)}:#{fetch(:runit_log_group)}" %> "<%= File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit") %>"
+chown -R <%= "#{fetch(:user)}:#{fetch(:runit_log_group)}" %> "<%= runit_var_log_service_runit_path %>"
 # change path to the log directory
-cd "<%= File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit") %>"
+cd "<%= runit_var_log_service_runit_path %>"
 # start logging
-exec chpst -u <%= fetch(:runit_log_user)%> svlogd -tt "<%= File.join("/var", "log", "service", Capistrano::BaseHelper.user_app_env_path, "runit") %>"
+exec chpst -u <%= fetch(:runit_log_user)%> svlogd -tt "<%= runit_var_log_service_runit_path %>"
