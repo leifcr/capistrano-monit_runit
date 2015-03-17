@@ -1,3 +1,5 @@
+require 'active_support'
+require 'active_support/core_ext/string/filters'
 module Capistrano
   module Helpers
     ##
@@ -44,7 +46,7 @@ module Capistrano
       end
 
       def template_to_s_io(template_file)
-        fail "Cannot find templte #{template_file}" unless File.exist?(template_file)
+        fail "Cannot find template #{template_file}" unless File.exist?(template_file)
         StringIO.new(ERB.new(File.read(template_file)).result(binding))
       end
 
