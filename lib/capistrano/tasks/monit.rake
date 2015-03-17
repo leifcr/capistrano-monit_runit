@@ -7,6 +7,11 @@
 # Let monit monitor any long-running processes to ensure they keep
 # within the limits set by you.
 
+require 'capistrano/dsl/base_paths'
+require 'capistrano/dsl/monit_paths'
+require 'capistrano/helpers/base'
+require 'capistrano/helpers/monit'
+
 include Capistrano::DSL::BasePaths
 include Capistrano::DSL::MonitPaths
 include Capistrano::Helpers::Base

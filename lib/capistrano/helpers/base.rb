@@ -4,15 +4,19 @@ module Capistrano
     # Helper functions for both runit and monit
     module Base
       def user_app_env_underscore
-        "#{fetch(:user)}_#{fetch(:application)}_#{environment}"
+        "#{fetch(:user)}_#{fetch(:application)}_#{environment}".squish.downcase.gsub(/[\s|-]/, '_')
       end
 
       def user_app_env_underscore_short
-        "#{fetch(:user)[0...1]}_#{environment[0...1]}_#{fetch(:application)}"
+        "#{fetch(:user)[0...1]}_#{environment[0...1]}_#{fetch(:application)}".squish.downcase.gsub(/[\s|-]/, '_')
       end
 
       def user_app_env_underscore_short_char_safe
-        user_app_env_underscore_short.gsub!('-', '_')
+        user_app_env_underscore_short.squish.downcase.gsub(/[\s|-]/, '_')
+      end
+
+      def app_env_underscore
+        "{fetch(:application)}_#{environment}".squish.downcase.gsub(/[\s|-]/, '_')
       end
 
       ##
