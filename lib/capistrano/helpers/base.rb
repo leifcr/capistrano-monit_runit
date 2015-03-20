@@ -18,7 +18,7 @@ module Capistrano
       end
 
       def app_env_underscore
-        "{fetch(:application)}_#{environment}".squish.downcase.gsub(/[\s|-]/, '_')
+        "#{fetch(:application)}_#{environment}".squish.downcase.gsub(/[\s|-]/, '_')
       end
 
       ##
