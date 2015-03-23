@@ -117,7 +117,6 @@ namespace :runit do
         execute :mkdir, fetch(:sockets_path) if test("[ ! -d #{fetch(:sockets_path)} ]")
       end
     end
-
   end
 
   desc 'Disable runit services for application'
@@ -153,19 +152,14 @@ namespace :runit do
     end
   end
 
-  desc 'Stop all runit services for current application'
-  task :stop do
-    runit_app_services_control('stop')
-  end
-
-  desc 'Start all runit services for current application'
-  task :start do
-    runit_app_services_control('start')
-  end
-
-  desc 'Only start services once. Will not restart if they fail.'
-  task :once do
-    runit_app_services_control('once')
+  %w(stop start once restart).each do |single_cmd|
+    desc "#{single_cmd} runit services for application"
+    task single_cmd.to_sym do
+      on roles(:app) do |host|
+        info "RUNIT: #{single_cmd} on #{host}"
+        runit_app_services_control(single_cmd)
+      end
+    end
   end
 end
 

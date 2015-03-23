@@ -3,7 +3,7 @@ module Capistrano
     module Runit
       # Any command sent to this function controls _all_ services related to the app
       def runit_app_services_control(command)
-        return unless test("[ ! -h '#{runit_etc_service_app_symlink_name}' ]")
+        return unless test("[ -h '#{runit_etc_service_app_symlink_name}' ]")
         execute :sudo, :sv, "#{command} #{runit_etc_service_app_symlink_name}"
       end
 
