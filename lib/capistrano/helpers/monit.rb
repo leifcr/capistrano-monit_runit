@@ -34,13 +34,13 @@ module Capistrano
       #
       # This will symlink the service to enabled service, but not start or reload monit configuration
       #
-      def enable_service(service_conf_filename)
-        return unless test("[ -h #{File.join(c.fetch(:monit_enabled_path), service_conf_filename)} ]")
-        execute :ln, "-sf #{File.join(c.fetch(:monit_available_path), service_conf_filename)} #{File.join(c.fetch(:monit_enabled_path), service_conf_filename)}" # rubocop:disable Metrics/LineLength:
+      def enable_monitor(service_conf_filename)
+        return unless test("[ ! -h #{File.join(fetch(:monit_enabled_path), service_conf_filename)} ]")
+        execute :ln, "-sf #{File.join(fetch(:monit_available_path), service_conf_filename)} #{File.join(fetch(:monit_enabled_path), service_conf_filename)}" # rubocop:disable Metrics/LineLength:
       end
 
-      def disable_service(service_conf_filename)
-        execute :rm, "-f #{File.join(c.fetch(:monit_enabled_path), service_conf_filename)}"
+      def disable_monitor(service_conf_filename)
+        execute :rm, "-f #{File.join(fetch(:monit_enabled_path), service_conf_filename)}"
       end
     end
   end

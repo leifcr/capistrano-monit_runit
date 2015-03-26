@@ -36,6 +36,7 @@ namespace :runit do
   task :sudoers do
     run_locally do
       info '---------------ENTRIES FOR SUDOERS (Runit)---------------------'
+      puts "# Sudo runit entries for #{fetch(:application)}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{runit_user_base_path}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{runit_user_base_path}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{runit_user_base_path}"

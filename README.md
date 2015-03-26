@@ -6,32 +6,38 @@ Note: This has been updated to support Capistrano >= 3.4. If you still use Capis
 
 ## Versioning
 
-This gem stays at 3.x for capistrano 3, as it seems logical.
+Use 3.x for capistrano 3
+
+For capistrano2, see the capistrano2 branch (will not be updated)
+
+## Usage
+
+You are unlikely to require this library without any of the libraries
+depending on it.
+
+But if you do require only Runit and Monit capistrano helpers, add this to your Gemfile in the development section.
+
+```ruby
+gem 'capistrano-runit_monit', require: false
+```
+
+In your Capfile:
+
+```ruby
+require 'capistrano/monit'
+require 'capistrano/runit'
+```
 
 ## Sudoing
 
 The setup process requires sudo on some files and folders upon creation.
 
-You must either do the job manually or add this to the sudoers file:
+You should run the following commands to get the proper list for entries to be created in /etc/sudoers.d
 
 ```
-Cmnd_Alias RUNITCAPISTRANO = ,
-deploy  ALL=NOPASSWD: /bin/chmod u+x /etc/sv/*
-deploy  ALL=NOPASSWD: /bin/chmod g+x /etc/sv/*
-deploy  ALL=NOPASSWD: /bin/chown deploy\:root /etc/sv/*
-deploy  ALL=NOPASSWD: /bin/chown -R deploy\:root /etc/sv/*
-deploy  ALL=NOPASSWD: /bin/chown -R deploy\:root /etc/service/*
-deploy  ALL=NOPASSWD: /bin/chown -R syslog\:syslog /var/log/service*
-deploy  ALL=NOPASSWD: /bin/mkdir -p /etc/service/*
-deploy  ALL=NOPASSWD: /bin/mkdir /etc/service/*
-deploy  ALL=NOPASSWD: /bin/mkdir -p /var/log/service*
-deploy  ALL=NOPASSWD: /bin/mkdir -p /etc/sv/*
-deploy  ALL=NOPASSWD: /bin/mkdir /etc/sv/*
-deploy  ALL=NOPASSWD: /bin/rm -rf /etc/service/*
-
+cap production runit:sudoers
+cap production monit:sudoers
 ```
-,/bin/chown myuser:mygroup /var/www/html/*,/bin/chmod 755 /var/www/html2/myapp/*.txt
-
 
 ## Services for Monit and Runit
 
@@ -75,8 +81,8 @@ You can add this to deploy.rb or env.rb in order to automatically monitor/unmoni
 It is important to unmonitor tasks while deploying as they can trigger stops/restarts to the app that monit thinks are "crashes"
 
 ```ruby
-before "deploy:started",  "monit:unmonitor"
-after  "deploy:finished", "monit:monitor"
+before 'deploy:updating', 'monit:unmonitor'
+after 'deploy:finished', 'monit:monitor'
 ```
 
 If you want monit to automatically start/stop runit instead of triggering seperately
@@ -105,8 +111,15 @@ cap runit:stop                  # Stop all runit services for current applicatio
 You can add this to deploy.rb or env.rb in order to automatically start/stop tasks
 
 ```ruby
-before "deploy", "runit:stop"
-after  "deploy", "runit:start"
+before "deploy:updating", "runit:stop"
+after  "deploy:finished", "runit:start"
+```
+
+Or just before finishing the update:
+
+```ruby
+before "deploy:finished", "runit:stop"
+after  "deploy:finished", "runit:start"
 ```
 
 See each gem if you want to start/stop each service separate instead of together.

@@ -71,8 +71,6 @@ module Capistrano
 
         if test("[ -d '#{runit_service_control_path(service_name)}' ]") # rubocop:disable Style/GuardClause
           execute :chmod, "775 -R #{runit_service_control_path(service_name)}"
-          # execute :chmod, 'u+x -R runit_service_control_path(service_name)'
-          # execute :chmod, 'g+x -R runit_service_control_path(service_name)'
         end
       end
 

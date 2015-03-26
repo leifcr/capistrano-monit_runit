@@ -33,17 +33,41 @@ namespace :load do
     set :monit_httpd_signature,     'enable' # or enable
     set :monit_httpd_port,          '2812'
 
-    set :monit_daemon_time,         '60'
-    set :monit_start_delay,         '60'
+    set :monit_daemon_time,         '30'
+    set :monit_start_delay,         '30'
 
     set :monit_monitrc_template,           File.join(File.expand_path(File.join(File.dirname(__FILE__), '../../../templates', 'monit')), 'monitrc.erb')  # rubocop:disable Metrics/LineLength:
     set :monit_application_conf_template,  File.join(File.expand_path(File.join(File.dirname(__FILE__), '../../../templates', 'monit')), 'app_include.conf.erb')  # rubocop:disable Metrics/LineLength:
 
     set :monit_application_conf_file, proc { File.join(fetch(:monit_dir), 'monit.conf') }
+
+    set :monit_event_dir, File.join('/var', 'run', 'monit')
   end
 end
 
 namespace :monit do
+  desc 'Get the config needed to add to sudoers'
+  task :sudoers do
+    run_locally do
+      info '---------------ENTRIES FOR SUDOERS (Monit)---------------------'
+      puts "# Sudo monit entries for #{fetch(:application)}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_etc_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{monit_etc_conf_d_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{monit_etc_conf_d_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_conf_d_path}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root\\:root #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{fetch(:monit_event_dir)}"
+      info '---------------------------------------------------------------'
+    end
+    # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
+  end
+
   desc 'Setup monit for the application'
   task :setup do
     on roles(:app) do |host|
@@ -57,27 +81,16 @@ namespace :monit do
       if test "[ ! -d #{fetch(:monit_enabled_path)} ]"
         execute :mkdir, "-p #{fetch(:monit_enabled_path)}"
       end
-    end
-  end
 
-  desc 'Get the config needed to add to sudoers'
-  task :sudoers do
-    run_locally do
-      info '---------------ENTRIES FOR SUDOERS (Monit)---------------------'
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_etc_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{monit_etc_conf_d_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{monit_etc_conf_d_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_conf_d_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root\\:root #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
-      info '---------------------------------------------------------------'
+      if test("[ ! -d #{monit_etc_conf_d_path} ]")
+        execute :sudo, :mkdir, "-p #{monit_etc_conf_d_path}"
+      end
+      execute :sudo, :chmod, "6775 #{monit_etc_conf_d_path}"
+      execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_conf_d_path}"
+
+      # Upload application global monit include file
+      upload! template_to_s_io(fetch(:monit_application_conf_template)), fetch(:monit_application_conf_file)
     end
-    # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
   end
 
   desc 'Setup main monit config file (/etc/monit/monitrc)'
@@ -86,11 +99,6 @@ namespace :monit do
       set :createmonitrc, ask("Create #{monit_monitrc_file} [Y/n]", 'Y')
       if fetch(:createmonitrc) == 'Y'
         info "MONIT: Creating #{monit_monitrc_file} on #{host}"
-        if test("[ ! -d #{monit_etc_conf_d_path} ]")
-          execute :sudo, :mkdir, "-p #{monit_etc_conf_d_path}"
-          execute :sudo, :chmod, "6775 #{monit_etc_conf_d_path}"
-          execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_conf_d_path}"
-        end
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_path}"
         execute :sudo, :chmod, "0775 #{monit_etc_path}"
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_monitrc_file}"
@@ -98,6 +106,7 @@ namespace :monit do
         execute :sudo, :chmod, "0700 #{monit_monitrc_file}"
         execute :sudo, :chown, "root:root #{monit_monitrc_file}"
         execute :sudo, :service, 'monit restart'
+        execute :sudo, :mkdir, "-p #{fetch(:monit_event_dir)}"
         info "MONIT: Sleeping for #{fetch(:monit_start_delay).to_i} seconds to wait for monit to be ready"
         sleep(fetch(:monit_start_delay).to_i)
       end

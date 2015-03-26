@@ -8,8 +8,8 @@ set statefile /var/lib/monit/state
 set idfile /var/lib/monit/id
 
 set eventqueue
-    basedir /var/monit  # set the base directory where events will be stored
-    slots 100           # optionaly limit the queue size
+    basedir <%= fetch(:monit_event_dir) %>  # set the base directory where events will be stored
+    slots 100                               # optionaly limit the queue size
 
 <%= fetch(:mail_alert_settings) %>
 
