@@ -3,6 +3,15 @@
 	[
 		{
 			"path": "."
+		},
+		{
+			"path": "../capistrano-delayed_job"
+		},
+		{
+			"path": "../capistrano_test"
+		},
+		{
+			"path": "../capistrano-puma"
 		}
 	]
 }
