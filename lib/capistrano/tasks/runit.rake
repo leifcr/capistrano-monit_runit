@@ -35,7 +35,7 @@ namespace :runit do
   desc 'Get the config needed to add to sudoers for all commands'
   task :sudoers do
     run_locally do
-      info '---------------ENTRIES FOR SUDOERS (Runit)---------------------'
+      puts '# -----------------------------------------------------------------------------------------'
       puts "# Sudo runit entries for #{fetch(:application)}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{runit_user_base_path}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{runit_user_base_path}"
@@ -48,7 +48,7 @@ namespace :runit do
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown -R #{fetch(:user)}\\:#{fetch(:runit_log_group)} #{runit_var_log_service_path}" # rubocop:disable Metrics/LineLength:
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{runit_var_log_service_path}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/sv *"
-      info '---------------------------------------------------------------'
+      puts '# -----------------------------------------------------------------------------------------'
     end
     # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
   end
@@ -171,3 +171,4 @@ after 'deploy:updated',   'runit:enable'
 after 'runit:setup',      'runit:setup:runit_create_app_services'
 after 'runit:setup:runit_create_app_services', 'runit:setup:runit_create_app_log_services'
 after 'runit:setup:runit_create_app_services', 'runit:setup:runit_ensure_shared_sockets_and_pids_folders'
+after 'sudoers', 'runit:sudoers'

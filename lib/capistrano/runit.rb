@@ -8,5 +8,5 @@ try_require 'capistrano/dsl/base_paths'
 try_require 'capistrano/dsl/runit_paths'
 try_require 'capistrano/helpers/base'
 try_require 'capistrano/helpers/runit'
-load File.expand_path('../tasks/base.rake', __FILE__)
+try_require 'capistrano/base'
 load File.expand_path('../tasks/runit.rake', __FILE__)

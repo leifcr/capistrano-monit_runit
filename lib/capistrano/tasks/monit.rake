@@ -49,7 +49,7 @@ namespace :monit do
   desc 'Get the config needed to add to sudoers'
   task :sudoers do
     run_locally do
-      info '---------------ENTRIES FOR SUDOERS (Monit)---------------------'
+      puts '# -----------------------------------------------------------------------------------------'
       puts "# Sudo monit entries for #{fetch(:application)}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
@@ -63,7 +63,7 @@ namespace :monit do
       puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
       puts "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{fetch(:monit_event_dir)}"
-      info '---------------------------------------------------------------'
+      puts '# -----------------------------------------------------------------------------------------'
     end
     # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
   end
@@ -235,3 +235,5 @@ before 'monit:disable', 'monit:unmonitor'
 after 'monit:disable', 'monit:reload'
 
 before 'monit:purge', 'monit:unmonitor'
+
+after 'sudoers', 'monit:sudoers'
