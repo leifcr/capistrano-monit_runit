@@ -60,6 +60,7 @@ namespace :monit do
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_conf_d_path}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_monitrc_file}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root\\:root #{monit_monitrc_file}"
+      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy\\:deploy #{monit_monitrc_file}"
       puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
       puts "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
       puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{fetch(:monit_event_dir)}"
@@ -103,7 +104,8 @@ namespace :monit do
         execute :sudo, :chmod, "0775 #{monit_etc_path}"
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_monitrc_file}"
         if test("[ -e #{monit_monitrc_file} ]")
-          execute :sudo, :rm, "-f #{monit_monitrc_file}"
+          execute :sudo, :chown, "deploy:deploy #{monit_monitrc_file}"
+          execute :rm, "-f #{monit_monitrc_file}"
         end
 
         upload! template_to_s_io(fetch(:monit_monitrc_template)), monit_monitrc_file
