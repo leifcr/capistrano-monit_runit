@@ -102,6 +102,10 @@ namespace :monit do
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_path}"
         execute :sudo, :chmod, "0775 #{monit_etc_path}"
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_monitrc_file}"
+        if test("[ -e #{monit_monitrc_file} ]")
+          execute :sudo, :rm, '-f #{monit_monitrc_file}'
+        end
+
         upload! template_to_s_io(fetch(:monit_monitrc_template)), monit_monitrc_file
         execute :sudo, :chmod, "0700 #{monit_monitrc_file}"
         execute :sudo, :chown, "root:root #{monit_monitrc_file}"
