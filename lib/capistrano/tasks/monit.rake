@@ -103,7 +103,7 @@ namespace :monit do
         execute :sudo, :chmod, "0775 #{monit_etc_path}"
         execute :sudo, :chown, "#{fetch(:user)}:root #{monit_monitrc_file}"
         if test("[ -e #{monit_monitrc_file} ]")
-          execute :sudo, :rm, '-f #{monit_monitrc_file}'
+          execute :sudo, :rm, "-f #{monit_monitrc_file}"
         end
 
         upload! template_to_s_io(fetch(:monit_monitrc_template)), monit_monitrc_file
@@ -134,7 +134,7 @@ namespace :monit do
     on roles(:app) do |host|
       if test("[ -h #{monit_etc_app_symlink} ]")
         info "MONIT: Disabling for #{fetch(:application)} on #{host}"
-        execute :rm, "-ff #{monit_etc_app_symlink}"
+        execute :rm, "-f #{monit_etc_app_symlink}"
       else
         info "MONIT: Already disabled for #{fetch(:application)} on #{host}"
       end
