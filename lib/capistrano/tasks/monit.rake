@@ -24,19 +24,6 @@ namespace :load do
     set :monit_enabled_path,   proc { File.join(fetch(:monit_dir), 'enabled') }
     set :monit_application_group_name,  proc { user_app_env_underscore }
 
-    set :monit_mailserver,          'localhost'
-    set :monit_mail_sender,         'monit@$HOST'
-    set :monit_mail_reciever,       nil # if this is nil, alerts are disabled
-    set :monit_use_httpd,           'true'
-    set :monit_httpd_bind_address,  'localhost'
-    set :monit_httpd_allow_address, 'localhost'
-    set :monit_httpd_signature,     'enable' # or enable
-    set :monit_httpd_port,          '2812'
-
-    set :monit_daemon_time,         '30'
-    set :monit_start_delay,         '30'
-
-    set :monit_monitrc_template,           File.join(File.expand_path(File.join(File.dirname(__FILE__), '../../../templates', 'monit')), 'monitrc.erb')  # rubocop:disable Metrics/LineLength:
     set :monit_application_conf_template,  File.join(File.expand_path(File.join(File.dirname(__FILE__), '../../../templates', 'monit')), 'app_include.conf.erb')  # rubocop:disable Metrics/LineLength:
 
     set :monit_application_conf_file, proc { File.join(fetch(:monit_dir), 'monit.conf') }
@@ -46,29 +33,6 @@ namespace :load do
 end
 
 namespace :monit do
-  desc 'Get the config needed to add to sudoers'
-  task :sudoers do
-    run_locally do
-      puts '# -----------------------------------------------------------------------------------------'
-      puts "# Sudo monit entries for #{fetch(:application)}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0775 #{monit_etc_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 0700 #{monit_etc_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{monit_etc_conf_d_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{monit_etc_conf_d_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_etc_conf_d_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown root\\:root #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy\\:deploy #{monit_monitrc_file}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/monit *"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/sbin/service monit *"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{fetch(:monit_event_dir)}"
-      puts '# -----------------------------------------------------------------------------------------'
-    end
-    # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
-  end
-
   desc 'Setup monit for the application'
   task :setup do
     on roles(:app) do |host|
@@ -83,39 +47,8 @@ namespace :monit do
         execute :mkdir, "-p #{fetch(:monit_enabled_path)}"
       end
 
-      if test("[ ! -d #{monit_etc_conf_d_path} ]")
-        execute :sudo, :mkdir, "-p #{monit_etc_conf_d_path}"
-      end
-      execute :sudo, :chmod, "6775 #{monit_etc_conf_d_path}"
-      execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_conf_d_path}"
-
       # Upload application global monit include file
       upload! template_to_s_io(fetch(:monit_application_conf_template)), fetch(:monit_application_conf_file)
-    end
-  end
-
-  desc 'Setup main monit config file (/etc/monit/monitrc)'
-  task :main_config do
-    on roles(:app) do |host|
-      set :createmonitrc, ask("Create #{monit_monitrc_file} [Y/n]", 'Y')
-      if fetch(:createmonitrc) == 'Y'
-        info "MONIT: Creating #{monit_monitrc_file} on #{host}"
-        execute :sudo, :chown, "#{fetch(:user)}:root #{monit_etc_path}"
-        execute :sudo, :chmod, "0775 #{monit_etc_path}"
-        execute :sudo, :chown, "#{fetch(:user)}:root #{monit_monitrc_file}"
-        if test("[ -e #{monit_monitrc_file} ]")
-          execute :sudo, :chown, "deploy:deploy #{monit_monitrc_file}"
-          execute :rm, "-f #{monit_monitrc_file}"
-        end
-
-        upload! template_to_s_io(fetch(:monit_monitrc_template)), monit_monitrc_file
-        execute :sudo, :chmod, "0700 #{monit_monitrc_file}"
-        execute :sudo, :chown, "root:root #{monit_monitrc_file}"
-        execute :sudo, :service, 'monit restart'
-        execute :sudo, :mkdir, "-p #{fetch(:monit_event_dir)}"
-        info "MONIT: Sleeping for #{fetch(:monit_start_delay).to_i} seconds to wait for monit to be ready"
-        sleep(fetch(:monit_start_delay).to_i)
-      end
     end
   end
 
@@ -225,21 +158,9 @@ namespace :monit do
   end
 end
 
-# after 'deploy:update', 'monit:enable'
-# after 'deploy:setup', 'monit:setup'
-before 'monit:setup',  'monit:main_config'
-# after 'monit:setup', 'monit:enable'
 after 'monit:enable', 'monit:reload'
-
-# This should be done in the app, as the sequence of restarting services can be specific
-# must trigger monitor after deploy
-# after 'deploy', 'monit:monitor'
-# must trigger unmonitor before deploy
-# before 'deploy', 'monit:unmonitor'
 
 before 'monit:disable', 'monit:unmonitor'
 after 'monit:disable', 'monit:reload'
 
 before 'monit:purge', 'monit:unmonitor'
-
-after 'sudoers', 'monit:sudoers'

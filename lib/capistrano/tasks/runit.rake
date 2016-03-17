@@ -32,27 +32,6 @@ namespace :load do
 end
 
 namespace :runit do
-  desc 'Get the config needed to add to sudoers for all commands'
-  task :sudoers do
-    run_locally do
-      puts '# -----------------------------------------------------------------------------------------'
-      puts "# Sudo runit entries for #{fetch(:application)}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{runit_user_base_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{runit_user_base_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{runit_user_base_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{runit_etc_service_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{runit_etc_service_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{runit_etc_service_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/mkdir -p #{runit_var_log_service_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown #{fetch(:user)}\\:root #{runit_var_log_service_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chown -R #{fetch(:user)}\\:#{fetch(:runit_log_group)} #{runit_var_log_service_path}" # rubocop:disable Metrics/LineLength:
-      puts "#{fetch(:user)} ALL=NOPASSWD: /bin/chmod 6775 #{runit_var_log_service_path}"
-      puts "#{fetch(:user)} ALL=NOPASSWD: /usr/bin/sv *"
-      puts '# -----------------------------------------------------------------------------------------'
-    end
-    # info "#{fetch(:user)} ALL=NOPASSWD: /bin/chown deploy:root #{monit_monitrc_file}"
-  end
-
   desc 'Setup runit for the application'
   task :setup do
     on roles(:app) do |host|
@@ -70,15 +49,6 @@ namespace :runit do
     # '[INTERNAL] create /etc/sv folders and upload base templates needed'
     task :runit_create_app_services do
       on roles(:app) do |host|
-        # set :pw, ask("Sudo password", '')
-        # execute :echo, "#{fetch(:pw)} | sudo -S ls /"
-        execute :sudo, :mkdir, "-p '#{runit_user_base_path}'" if test("[ ! -d '#{runit_user_base_path}' ]")
-        execute :sudo, :chown, "#{fetch(:user)}:root '#{runit_user_base_path}'"
-        execute :sudo, :chmod, "6775 '#{runit_user_base_path}'"
-
-        execute :sudo, :mkdir, "-p '#{runit_etc_service_path}'" if test("[ ! -d '#{runit_etc_service_path}' ]")
-        execute :sudo, :chown, "#{fetch(:user)}:root '#{runit_etc_service_path}'"
-        execute :sudo, :chmod, "6775 '#{runit_etc_service_path}'"
         within("#{runit_user_base_path}") do
           execute :mkdir, "-p #{app_env_folder}"
         end
@@ -86,7 +56,6 @@ namespace :runit do
         upload! template_to_s_io(fetch(:runit_run_template)), runit_run_file
         upload! template_to_s_io(fetch(:runit_finish_template)), runit_finish_file
 
-        # Should now work without sudo... ?
         execute :chmod, "0775 '#{runit_run_file}'"
         execute :chmod, "0775 '#{runit_finish_file}'"
         info "RUNIT: Created inital runit services in #{runit_base_path} for #{fetch(:application)} on #{host}"
@@ -100,11 +69,6 @@ namespace :runit do
           execute :mkdir, '-p log'
         end
         upload! template_to_s_io(fetch(:runit_log_run_template)), runit_log_run_file
-        if test("[ ! -d #{runit_var_log_service_path} ]")
-          execute :sudo, :mkdir, "-p '#{runit_var_log_service_path}'"
-          execute :sudo, :chmod, "6775 '#{runit_var_log_service_path}'"
-          execute :sudo, :chown, "-R #{fetch(:user)}:#{fetch(:runit_log_group)} '#{runit_var_log_service_path}'" # rubocop:disable Metrics/LineLength:
-        end
         execute :mkdir, "-p #{runit_var_log_service_runit_path}" if test("[ ! -d #{runit_var_log_service_runit_path} ]")
         execute :chmod, "775 '#{runit_log_run_file}'"
 
@@ -171,4 +135,3 @@ after 'deploy:updated',   'runit:enable'
 after 'runit:setup',      'runit:setup:runit_create_app_services'
 after 'runit:setup:runit_create_app_services', 'runit:setup:runit_create_app_log_services'
 after 'runit:setup:runit_create_app_services', 'runit:setup:runit_ensure_shared_sockets_and_pids_folders'
-after 'sudoers', 'runit:sudoers'

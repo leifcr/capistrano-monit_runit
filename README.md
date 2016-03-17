@@ -30,14 +30,10 @@ require 'capistrano/runit'
 
 ## Sudoing
 
-The setup process requires sudo on some files and folders upon creation.
+You should setup sudoers to allow control over monit and runit from the deployment user in either Salt, puppet, chef or
+other form for infrastructure setup
 
-You should run the following commands to get the proper list for entries to be created in /etc/sudoers.d
-
-```
-cap production runit:sudoers
-cap production monit:sudoers
-```
+The cap tasks for creating a sudoers list has been deprecated, as it does not belong to deployment of an app
 
 ## Services for Monit and Runit
 
@@ -143,4 +139,3 @@ The following variables must be set
 ## Copyright
 
 (c) 2013-2015 Leif Ringstad. See LICENSE.txt for details
-
