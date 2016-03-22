@@ -35,7 +35,7 @@ end
 namespace :monit do
   desc 'Setup monit for the application'
   task :setup do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Setting up initial monit configuration on #{host}"
       if test "[ ! -d #{fetch(:monit_dir)} ]"
         execute :mkdir, "-p #{fetch(:monit_dir)}"
@@ -54,7 +54,7 @@ namespace :monit do
 
   desc 'Enable monit services for application'
   task :enable do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       if test("[ ! -h #{monit_etc_app_symlink} ]")
         info "MONIT: Enabling for #{fetch(:application)} on #{host}"
         execute :ln, "-sf #{fetch(:monit_application_conf_file)} #{monit_etc_app_symlink}"
@@ -66,7 +66,7 @@ namespace :monit do
 
   desc 'Disable monit services for application'
   task :disable do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       if test("[ -h #{monit_etc_app_symlink} ]")
         info "MONIT: Disabling for #{fetch(:application)} on #{host}"
         execute :rm, "-f #{monit_etc_app_symlink}"
@@ -78,7 +78,7 @@ namespace :monit do
 
   desc 'Purge/remove all monit configurations for the application'
   task :purge do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: 'Purging config on #{host}"
       execute :rm, "-rf #{fetch(:monit_dir)}" if test("[ -d #{fetch(:monit_dir)} ]")
       execute :rm, "-f #{monit_etc_app_symlink}"
@@ -87,7 +87,7 @@ namespace :monit do
 
   desc 'Monitor the application'
   task :monitor do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Application: Monitoring on #{host}"
       command_monit_group('monitor')
     end
@@ -95,7 +95,7 @@ namespace :monit do
 
   desc 'Unmonitor the application'
   task :unmonitor do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Application: Unmonitoring on #{host}"
       command_monit_group('unmonitor')
     end
@@ -103,7 +103,7 @@ namespace :monit do
 
   desc 'Stop monitoring the application permanent (Monit saves state)'
   task :stop do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Application: Stopping on #{host}"
       command_monit_group('stop')
     end
@@ -111,7 +111,7 @@ namespace :monit do
 
   desc 'Start monitoring the application permanent (Monit saves state)'
   task :start do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Application: Starting on #{host}"
       command_monit_group('start')
     end
@@ -119,7 +119,7 @@ namespace :monit do
 
   desc 'Restart monitoring the application'
   task :restart do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Application: Restarting on #{host}"
       command_monit_group('restart')
     end
@@ -127,7 +127,7 @@ namespace :monit do
 
   desc 'Reload monit config (global)'
   task :reload do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Global: Reloading on #{host}"
       command_monit('reload')
     end
@@ -135,7 +135,7 @@ namespace :monit do
 
   desc 'Status monit (global)'
   task :status do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Global: Status on #{host}"
       command_monit('status')
     end
@@ -143,7 +143,7 @@ namespace :monit do
 
   desc 'Summary monit (global)'
   task :summary do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Global: Summary for #{host}"
       command_monit('summary')
     end
@@ -151,7 +151,7 @@ namespace :monit do
 
   desc 'Validate monit (global)'
   task :validate do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "MONIT: Global: Validating config on #{host}"
       command_monit('validate')
     end

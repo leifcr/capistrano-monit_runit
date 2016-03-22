@@ -34,7 +34,7 @@ end
 namespace :runit do
   desc 'Setup runit for the application'
   task :setup do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       info "RUNIT: Setting up initial runit configuration on #{host}"
       if test "[ ! -f #{fetch(:runit_dir)}/.env/HOME ]"
         if test "[ ! -d #{fetch(:runit_dir)}/.env ]"
@@ -48,7 +48,7 @@ namespace :runit do
   namespace :setup do
     # '[INTERNAL] create /etc/sv folders and upload base templates needed'
     task :runit_create_app_services do
-      on roles(:app) do |host|
+      on roles([:app, :worker]) do |host|
         within("#{runit_user_base_path}") do
           execute :mkdir, "-p #{app_env_folder}"
         end
@@ -64,7 +64,7 @@ namespace :runit do
 
     # [Internal] create log service for app
     task :runit_create_app_log_services do
-      on roles(:app) do |host|
+      on roles([:app, :worker]) do |host|
         within("#{runit_base_path}") do
           execute :mkdir, '-p log'
         end
@@ -77,7 +77,7 @@ namespace :runit do
     end
     # '[INTERNAL] create /etc/sv folders and upload base templates needed'
     task :runit_ensure_shared_sockets_and_pids_folders do
-      on roles(:app) do |host|
+      on roles([:app, :worker]) do |host|
         execute :mkdir, fetch(:pids_path) if test("[ ! -d #{fetch(:pids_path)} ]")
         execute :mkdir, fetch(:sockets_path) if test("[ ! -d #{fetch(:sockets_path)} ]")
       end
@@ -86,7 +86,7 @@ namespace :runit do
 
   desc 'Disable runit services for application'
   task :disable do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       if test "[ -h #{runit_etc_service_app_symlink_name} ]"
         execute :rm, "-rf '#{runit_etc_service_app_symlink_name}'"
         info "RUNIT disabling on '#{host}'"
@@ -98,7 +98,7 @@ namespace :runit do
 
   desc 'Enable runit services for application'
   task :enable do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       if test "[ ! -h #{runit_etc_service_app_symlink_name} ]"
         execute :ln, "-sf '#{runit_base_path}' '#{runit_etc_service_app_symlink_name}'"
         info "RUNIT enabling on '#{host}'"
@@ -110,7 +110,7 @@ namespace :runit do
 
   desc 'Purge/remove all runit configurations for the application'
   task :purge do
-    on roles(:app) do |host|
+    on roles([:app, :worker]) do |host|
       execute :rm, "-rf #{runit_etc_service_app_symlink_name}"
       execute :rm, "-rf #{runit_base_path}"
       info "RUNIT purging config on '#{host}'"
@@ -120,7 +120,7 @@ namespace :runit do
   %w(stop start once restart).each do |single_cmd|
     desc "#{single_cmd} runit services for application"
     task single_cmd.to_sym do
-      on roles(:app) do |host|
+      on roles([:app, :worker]) do |host|
         info "RUNIT: #{single_cmd} on #{host}"
         runit_app_services_control(single_cmd)
       end
