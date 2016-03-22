@@ -28,6 +28,10 @@ require 'capistrano/monit'
 require 'capistrano/runit'
 ```
 
+### Roles:
+
+capistrano-runit_monit targets ```:app``` and ```:worker``` roles by default.
+
 ## Sudoing
 
 You should setup sudoers to allow control over monit and runit from the deployment user in either Salt, puppet, chef or
