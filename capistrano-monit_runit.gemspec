@@ -46,7 +46,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "https://github.com/leifcr/capistrano-monit_runit".freeze
   s.licenses = ["MIT".freeze]
-  s.rubygems_version = "3.0.3".freeze
+  s.rubygems_version = "2.7.9".freeze
   s.summary = "Helpers for capistrano recipes using runit/monit".freeze
 
   if s.respond_to? :specification_version then
