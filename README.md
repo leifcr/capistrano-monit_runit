@@ -4,6 +4,10 @@ This libary is a helper library for capistrano tasks that setup [runit](smarden.
 
 Note: This has been updated to support Capistrano >= 3.4. If you still use Capistrano 2.x, see the capistrano2 branch
 
+## Not maintained!
+
+This is no longer maintained, as deployment methods have changed the last years. (Kubernetes, docker, etc)
+
 ## Versioning
 
 Use 3.x for capistrano 3
